@@ -21,23 +21,17 @@ import ru.anton2319.vpnoverssh.data.PayloadProfile;
 
 public class PayloadProfileManager {
     private static final String TAG = "PayloadProfileManager";
-    private final boolean netmodMode;
+    private static final String FILE_NAME = "payload_profiles.json";
     private final AtomicFile file;
     private final Gson gson = new Gson();
     private final Type listType = new TypeToken<List<PayloadProfile>>() {}.getType();
 
     public PayloadProfileManager(Context context) {
-        this(context, false);
-    }
-
-    public PayloadProfileManager(Context context, boolean netmodMode) {
-        this.netmodMode = netmodMode;
-        String fileName = netmodMode ? "netmod_payload_profiles.json" : "payload_profiles.json";
-        file = new AtomicFile(new File(context.getFilesDir(), fileName));
+        file = new AtomicFile(new File(context.getFilesDir(), FILE_NAME));
     }
 
     public synchronized List<PayloadProfile> loadProfiles() {
-        if (!file.getBaseFile().exists()) return netmodMode ? new ArrayList<>() : seedDefaults();
+        if (!file.getBaseFile().exists()) return seedDefaults();
         try (InputStream in = file.openRead();
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[4096];
@@ -46,7 +40,7 @@ public class PayloadProfileManager {
             List<PayloadProfile> profiles = gson.fromJson(
                     new String(out.toByteArray(), StandardCharsets.UTF_8), listType);
             if (profiles == null || profiles.isEmpty()) {
-                return netmodMode ? new ArrayList<>() : seedDefaults();
+                return seedDefaults();
             }
             // Sanitize any dummy hostnames from earlier versions
             boolean changed = false;
@@ -63,7 +57,7 @@ public class PayloadProfileManager {
             return profiles;
         } catch (Exception e) {
             Log.e(TAG, "Unable to read payload profiles", e);
-            return netmodMode ? new ArrayList<>() : seedDefaults();
+            return seedDefaults();
         }
     }
 

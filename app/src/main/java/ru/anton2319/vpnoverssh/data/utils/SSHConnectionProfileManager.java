@@ -21,26 +21,19 @@ import ru.anton2319.vpnoverssh.data.SSHConnectionProfile;
 
 public class SSHConnectionProfileManager {
     private static final String TAG = "SSHConnectionProfileManager";
-    private final String fileName;
-    private final boolean netmodMode;
+    private static final String FILE_NAME = "ssh_profiles.json";
 
     private final Context context;
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private final Type listType = new TypeToken<List<SSHConnectionProfile>>() {}.getType();
 
     public SSHConnectionProfileManager(Context context) {
-        this(context, false);
-    }
-
-    public SSHConnectionProfileManager(Context context, boolean netmodMode) {
         this.context = context.getApplicationContext();
-        this.netmodMode = netmodMode;
-        this.fileName = netmodMode ? "netmod_ssh_profiles.json" : "ssh_profiles.json";
     }
 
     public synchronized void saveProfiles(List<SSHConnectionProfile> profiles) {
         String json = gson.toJson(profiles);
-        try (FileOutputStream fos = context.openFileOutput(fileName, Context.MODE_PRIVATE)) {
+        try (FileOutputStream fos = context.openFileOutput(FILE_NAME, Context.MODE_PRIVATE)) {
             fos.write(json.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
             Log.e(TAG, "Error saving SSH profiles: " + e.getMessage());
@@ -78,7 +71,7 @@ public class SSHConnectionProfileManager {
     public synchronized List<SSHConnectionProfile> loadProfiles() {
         List<SSHConnectionProfile> profiles = new ArrayList<>();
         try {
-            FileInputStream fis = context.openFileInput(fileName);
+            FileInputStream fis = context.openFileInput(FILE_NAME);
             BufferedReader reader = new BufferedReader(new InputStreamReader(fis, StandardCharsets.UTF_8));
             StringBuilder sb = new StringBuilder();
             String line;
@@ -104,11 +97,11 @@ public class SSHConnectionProfileManager {
                 }
             }
             if (profiles.isEmpty()) {
-                return netmodMode ? profiles : seedDefaults();
+                return seedDefaults();
             }
         } catch (Exception e) {
             Log.e(TAG, "Error loading SSH profiles: " + e.getMessage());
-            return netmodMode ? profiles : seedDefaults();
+            return seedDefaults();
         }
 
         return profiles;
@@ -126,7 +119,11 @@ public class SSHConnectionProfileManager {
             }
         }
         if (removed) {
-            saveProfiles(existing);
+            if (existing.isEmpty()) {
+                seedDefaults();
+            } else {
+                saveProfiles(existing);
+            }
         }
     }
 
