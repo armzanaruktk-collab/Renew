@@ -1258,13 +1258,19 @@ public class MainActivity extends AppCompatActivity {
                 .setTitle("NETMOD SSH")
                 .setItems(items, (dialog, which) -> {
                     switch (which) {
-                        case 0:
-                            showServerPicker();
+                        case 0: {
+                            Intent intent = new Intent(this, NewConnectionActivity.class);
+                            intent.putExtra("netmod_mode", true);
+                            startActivity(intent);
                             break;
+                        }
                         case 1:
-                        case 2:
-                            showScreen(1);
+                        case 2: {
+                            Intent intent = new Intent(this, PayloadManagerActivity.class);
+                            intent.putExtra("netmod_mode", true);
+                            startActivity(intent);
                             break;
+                        }
                         case 3:
                             new AlertDialog.Builder(this)
                                     .setTitle("SSL/TLS")
