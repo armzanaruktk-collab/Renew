@@ -1244,7 +1244,6 @@ public class MainActivity extends AppCompatActivity {
         etSettingsForwarderPort.setText(sharedPreferences.getString("forwarder_port", "1080"));
     }
 
-    private void setupDrawerEvents() {
     private void showNetmodMenu() {
         final String[] items = {
                 "Direct SSH",
@@ -1290,6 +1289,7 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
+    private void setupDrawerEvents() {
         findViewById(R.id.drawer_item_netmod).setOnClickListener(v -> {
             drawerLayout.closeDrawer(GravityCompat.END);
             showNetmodMenu();
