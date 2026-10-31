@@ -140,6 +140,14 @@ public class SshService extends Service {
         PortForward.getInstance().setForwarder(forwarder);
         ConnectionLogger.getInstance().success("Dynamic Forwarder เปิดทำงานแล้วบน 127.0.0.1:" + localPort);
         Log.i(TAG, "SSH authenticated; local SOCKS5 forwarder listening on 127.0.0.1:" + localPort);
+
+        // Start the VPN only after the local SOCKS5 endpoint is listening.
+        Intent vpnIntent = StatusInfo.getInstance().getVpnIntent();
+        if (vpnIntent == null) {
+            throw new IOException("VPN service intent is not initialized");
+        }
+        ConnectionLogger.getInstance().info("SSH พร้อมแล้ว กำลังเริ่ม VPN ผ่าน SOCKS5...");
+        startService(vpnIntent);
     }
 
     private PayloadProfile findPayload(String uuid) {
