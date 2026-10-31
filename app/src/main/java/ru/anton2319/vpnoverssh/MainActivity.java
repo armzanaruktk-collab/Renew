@@ -1173,7 +1173,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void launchBackendVpn() {
         try {
-            StatusInfo.getInstance().setActive(true);
+            // Mark the tunnel active only after SSH and the VPN engine are ready.
+            StatusInfo.getInstance().setActive(false);
             sshIntent.putExtra("user", selectedSshProfile.getUsername());
             sshIntent.putExtra("password", selectedSshProfile.getPassword());
             if (selectedSshProfile.getPrivateKey() != null && !selectedSshProfile.getPrivateKey().isEmpty()) {
@@ -1189,11 +1190,9 @@ public class MainActivity extends AppCompatActivity {
             }
             sshIntent.putExtra("hostname", selectedSshProfile.getServerIP());
             sshIntent.putExtra("port", String.valueOf(selectedSshProfile.getServerPort()));
+            // SshService starts the VPN only after SSH authentication and SOCKS5
+            // forwarding have completed successfully.
             startService(sshIntent);
-
-            vpnIntent.putExtra("socksPort", 1080);
-            startService(vpnIntent);
-
             updateHomeDisplays();
         } catch (Exception e) {
             Log.e(TAG, "Error starting VPN: ", e);
