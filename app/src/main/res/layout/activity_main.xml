@@ -2131,6 +2131,35 @@
                 android:textSize="16sp" />
         </LinearLayout>
 
+        <!-- Separate NETMOD SSH section -->
+        <LinearLayout
+            android:id="@+id/drawer_item_netmod"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="24dp"
+            android:background="#17152B">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:contentDescription="NETMOD SSH"
+                android:src="@drawable/pictogrammers_material_ssh"
+                app:tint="#A78BFA" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="18dp"
+                android:text="NETMOD SSH"
+                android:textColor="#A78BFA"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
         <!-- Drawer Item: ตั้งค่า -->
         <LinearLayout
             android:id="@+id/drawer_item_settings"
