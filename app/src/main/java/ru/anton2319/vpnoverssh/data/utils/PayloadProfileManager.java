@@ -42,6 +42,18 @@ public class PayloadProfileManager {
             if (profiles == null || profiles.isEmpty()) {
                 return seedDefaults();
             }
+            // Sanitize any dummy hostnames from earlier versions
+            boolean changed = false;
+            for (PayloadProfile p : profiles) {
+                if (p != null && p.proxyHost != null && (p.proxyHost.contains("example.com")
+                        || p.proxyHost.equals("th-proxy.com") || p.proxyHost.equals("bestproxy.net"))) {
+                    p.proxyHost = "";
+                    changed = true;
+                }
+            }
+            if (changed) {
+                saveProfiles(profiles);
+            }
             return profiles;
         } catch (Exception e) {
             Log.e(TAG, "Unable to read payload profiles", e);
@@ -53,29 +65,29 @@ public class PayloadProfileManager {
         List<PayloadProfile> defaults = new ArrayList<>();
         PayloadProfile p1 = new PayloadProfile();
         p1.uuid = "default-mypayload-uuid";
-        p1.name = "MyPayload";
-        p1.description = "Default HTTP CONNECT payload";
-        p1.proxyHost = "proxy.example.com";
-        p1.proxyPort = 8080;
-        p1.payload = "CONNECT [host_port] HTTP/1.1[crlf]Host: [host_port][crlf]User-Agent: [ua][crlf]Connection: keep-alive[crlf][crlf]";
+        p1.name = "HTTP Custom Direct";
+        p1.description = "เชื่อมต่อตรงพร้อมฉีด Payload (Direct + Payload)";
+        p1.proxyHost = "";
+        p1.proxyPort = 80;
+        p1.payload = "CONNECT [host_port] [protocol][crlf]Host: [host][crlf]X-Online-Host: [host][crlf]User-Agent: [ua][crlf][keep][crlf][crlf]";
         defaults.add(p1);
 
         PayloadProfile p2 = new PayloadProfile();
         p2.uuid = "default-thailand01-uuid";
-        p2.name = "Thailand-01";
-        p2.description = "Thailand High Speed Proxy";
-        p2.proxyHost = "th-proxy.com";
-        p2.proxyPort = 8080;
-        p2.payload = "CONNECT [host_port] HTTP/1.1[crlf]Host: [host][crlf]Proxy-Connection: Keep-Alive[crlf][crlf]";
+        p2.name = "Cloudflare / CDN WebSocket";
+        p2.description = "WebSocket Payload สำหรับ CDN หรือ Cloudflare";
+        p2.proxyHost = "";
+        p2.proxyPort = 80;
+        p2.payload = "GET / [protocol][crlf]Host: [host][crlf]Upgrade: websocket[crlf]Connection: Upgrade[crlf][crlf]";
         defaults.add(p2);
 
         PayloadProfile p3 = new PayloadProfile();
         p3.uuid = "default-bestspeed-uuid";
-        p3.name = "BestSpeed";
-        p3.description = "High Speed Cloud Proxy";
-        p3.proxyHost = "bestproxy.net";
-        p3.proxyPort = 80;
-        p3.payload = "CONNECT [host_port] HTTP/1.1[crlf]Host: [host_port][crlf]User-Agent: [ua][crlf][crlf]";
+        p3.name = "HTTP Custom Split Proxy";
+        p3.description = "แยกแพ็กเก็ต [split] (เชื่อมตรงหรือผ่าน Remote Proxy)";
+        p3.proxyHost = "";
+        p3.proxyPort = 8080;
+        p3.payload = "GET / [protocol][crlf]Host: [host][crlf][split]CONNECT [host_port] [protocol][crlf]Host: [host][crlf][crlf]";
         defaults.add(p3);
 
         saveProfiles(defaults);

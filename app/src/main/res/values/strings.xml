@@ -69,10 +69,10 @@
     <string name="hint_payload_desc">คำอธิบายการใช้งาน</string>
     <string name="label_payload_body">HTTP Custom Payload *</string>
     <string name="hint_payload_body">เช่น CONNECT [host_port] [protocol][crlf]Host: [host][crlf]User-Agent: [ua][crlf][keep][crlf][crlf]</string>
-    <string name="label_proxy_host">Remote Proxy Host *</string>
-    <string name="hint_proxy_host">เช่น proxy.example.com</string>
-    <string name="label_proxy_port">Remote Proxy Port *</string>
-    <string name="hint_proxy_port">เช่น 8080 (1-65535)</string>
+    <string name="label_proxy_host">Remote Proxy Host (เว้นว่างได้สำหรับ Direct Payload)</string>
+    <string name="hint_proxy_host">เว้นว่างไว้เพื่อฉีดหา SSH Server โดยตรง</string>
+    <string name="label_proxy_port">Remote Proxy Port</string>
+    <string name="hint_proxy_port">เช่น 8080 หรือ 80 (เว้นว่างได้)</string>
     <string name="btn_clear">ล้างข้อมูล</string>
     <string name="btn_save">บันทึก</string>
 

@@ -18,6 +18,7 @@ import java.util.List;
 
 import ru.anton2319.vpnoverssh.data.PayloadProfile;
 import ru.anton2319.vpnoverssh.data.singleton.PortForward;
+import ru.anton2319.vpnoverssh.data.singleton.StatusInfo;
 import ru.anton2319.vpnoverssh.data.utils.PayloadProfileManager;
 import ru.anton2319.vpnoverssh.proxy.HttpCustomProxyData;
 import ru.anton2319.vpnoverssh.utils.ConnectionLogger;
@@ -59,20 +60,36 @@ public class SshService extends Service {
         conn = new Connection(host, port);
         String mode = intent.getStringExtra("connectionMode");
         if ("PAYLOAD".equals(mode)) {
-            String payloadUuid = intent.getStringExtra("payloadUuid");
-            PayloadProfile selected = findPayload(payloadUuid);
-            if (selected == null) {
-                ConnectionLogger.getInstance().error("ไม่พบ Payload ที่เลือก กรุณาตรวจสอบในหน้าจัดการ Payload");
-                throw new IOException("Selected payload was not found. Open the SSH profile and select a saved payload.");
+            String payloadBody = intent.getStringExtra("payloadBody");
+            String proxyHost = intent.getStringExtra("payloadProxyHost");
+            int proxyPort = intent.getIntExtra("payloadProxyPort", 0);
+
+            if (payloadBody == null || payloadBody.trim().isEmpty()) {
+                String payloadUuid = intent.getStringExtra("payloadUuid");
+                PayloadProfile selected = findPayload(payloadUuid);
+                if (selected != null) {
+                    payloadBody = selected.payload;
+                    proxyHost = selected.proxyHost;
+                    proxyPort = selected.proxyPort;
+                }
             }
-            if (selected.proxyHost == null || selected.proxyHost.trim().isEmpty()
-                    || selected.proxyPort < 1 || selected.proxyPort > 65535) {
-                ConnectionLogger.getInstance().error("Proxy Host หรือ Port ของ Payload ไม่ถูกต้อง (" + selected.proxyHost + ":" + selected.proxyPort + ")");
-                throw new IOException("Payload proxy host or port is invalid");
+
+            if (payloadBody == null || payloadBody.trim().isEmpty()) {
+                payloadBody = "CONNECT [host_port] [protocol][crlf]Host: [host][crlf]User-Agent: [ua][crlf][keep][crlf][crlf]";
             }
-            ConnectionLogger.getInstance().info("กำลังเตรียม HTTP Custom Payload Proxy: " + selected.proxyHost + ":" + selected.proxyPort);
-            conn.setProxyData(new HttpCustomProxyData(selected.proxyHost.trim(), selected.proxyPort, selected.payload, null));
-            Log.i(TAG, "Connecting SSH through HTTP Custom payload proxy " + selected.proxyHost + ":" + selected.proxyPort);
+
+            if (proxyHost != null && (proxyHost.contains("example.com") || proxyHost.equalsIgnoreCase("direct") || proxyHost.equalsIgnoreCase("none"))) {
+                proxyHost = "";
+            }
+
+            if (proxyHost != null && !proxyHost.trim().isEmpty()) {
+                ConnectionLogger.getInstance().info("โหมด: HTTP Custom Payload ผ่าน Remote Proxy (" + proxyHost + ":" + (proxyPort > 0 ? proxyPort : 8080) + ")");
+            } else {
+                ConnectionLogger.getInstance().info("โหมด: HTTP Custom Payload ฉีดตรงไปยัง SSH Server (" + host + ":" + port + ")");
+            }
+
+            conn.setProxyData(new HttpCustomProxyData(proxyHost, proxyPort, payloadBody, null));
+            Log.i(TAG, "Connecting SSH with HTTP Custom payload (Proxy: " + proxyHost + ":" + proxyPort + ")");
         } else {
             ConnectionLogger.getInstance().info("โหมดเชื่อมต่อ: Direct SSH (ไม่ผ่าน Proxy)");
             Log.i(TAG, "Connecting directly to SSH server " + host + ":" + port);
@@ -172,12 +189,14 @@ public class SshService extends Service {
                 }
             } catch (IOException | RuntimeException e) {
                 Log.e(TAG, "SSH tunnel failed: " + e.getMessage(), e);
+                StatusInfo.getInstance().setActive(false);
                 ConnectionLogger.getInstance().error("SSH ล้มเหลว: " + e.getMessage());
                 ConnectionLogger.getInstance().warn("แนวทางแก้ไข: ตรวจสอบว่าโฮสต์ SSH ออนไลน์, พอร์ตไม่ถูกบล็อก, และข้อมูลรหัสผ่าน/คีย์ถูกต้อง");
                 closeConnection();
                 stopSelf();
             } finally {
                 if (Thread.currentThread().isInterrupted()) {
+                    StatusInfo.getInstance().setActive(false);
                     ConnectionLogger.getInstance().info("อุโมงค์ SSH ถูกยกเลิกตามคำสั่งผู้ใช้ (Disconnected)");
                     closeConnection();
                     stopSelf();

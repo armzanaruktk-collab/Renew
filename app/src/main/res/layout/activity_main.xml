@@ -235,6 +235,94 @@
                         </RelativeLayout>
                     </LinearLayout>
 
+                    <!-- CARD: เลือกโหมดการเชื่อมต่อ (Direct SSH หรือ Payload Proxy) -->
+                    <LinearLayout
+                        android:id="@+id/card_home_conn_mode"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="14dp"
+                        android:background="@drawable/bg_neon_card"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="10dp"
+                            android:text="โหมดการเชื่อมต่อ"
+                            android:textColor="@color/white"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <!-- Direct SSH button -->
+                            <LinearLayout
+                                android:id="@+id/btn_mode_direct"
+                                android:layout_width="0dp"
+                                android:layout_height="52dp"
+                                android:layout_weight="1"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/bg_mode_tab_inactive"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:gravity="center"
+                                android:orientation="horizontal"
+                                android:paddingHorizontal="10dp">
+
+                                <ImageView
+                                    android:id="@+id/iv_home_direct_radio"
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:src="@drawable/bg_radio_unchecked" />
+
+                                <TextView
+                                    android:id="@+id/tv_home_mode_direct"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:text="เชื่อมตรง (Direct)"
+                                    android:textColor="@color/white"
+                                    android:textSize="13sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <!-- Payload button -->
+                            <LinearLayout
+                                android:id="@+id/btn_mode_payload"
+                                android:layout_width="0dp"
+                                android:layout_height="52dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="6dp"
+                                android:background="@drawable/bg_mode_tab_active"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:gravity="center"
+                                android:orientation="horizontal"
+                                android:paddingHorizontal="10dp">
+
+                                <ImageView
+                                    android:id="@+id/iv_home_payload_radio"
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:src="@drawable/bg_radio_checked" />
+
+                                <TextView
+                                    android:id="@+id/tv_home_mode_payload"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:text="เพย์โหลด (Payload)"
+                                    android:textColor="#52D68A"
+                                    android:textSize="13sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+                        </LinearLayout>
+                    </LinearLayout>
+
                     <!-- CARD 2: รายการ Payload (Payload List) -->
                     <LinearLayout
                         android:id="@+id/card_home_payload"
@@ -368,6 +456,266 @@
                         android:textColor="@color/white"
                         android:textSize="18sp"
                         android:textStyle="bold" />
+
+                    <!-- ================= TELEMETRY WIDGETS (Matching Screenshot) ================= -->
+                    <!-- CARD 1: YOUR LOCATION & PING / TRAFFIC -->
+                    <LinearLayout
+                        android:id="@+id/card_telemetry_location"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:background="@drawable/bg_telemetry_card"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_horizontal"
+                            android:letterSpacing="0.05"
+                            android:text="YOUR LOCATION"
+                            android:textColor="#88A0B8"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_horizontal"
+                            android:layout_marginTop="6dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:id="@+id/iv_telemetry_flag"
+                                android:layout_width="24dp"
+                                android:layout_height="18dp"
+                                android:layout_marginEnd="8dp"
+                                android:src="@drawable/ic_flag_th" />
+
+                            <TextView
+                                android:id="@+id/tv_telemetry_location_name"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Pho Thong, Thailand"
+                                android:textColor="#52D68A"
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tv_telemetry_exit_ip"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_horizontal"
+                            android:layout_marginTop="6dp"
+                            android:text="Exit IP: 43.229.148.181"
+                            android:textColor="#88A0B8"
+                            android:textSize="13sp" />
+
+                        <!-- Two sub-cards side-by-side: Ping and Traffic -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="14dp"
+                            android:orientation="horizontal">
+
+                            <!-- Ping Sub-card -->
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="88dp"
+                                android:layout_weight="1"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/bg_telemetry_subcard"
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:padding="12dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Ping"
+                                    android:textColor="#88A0B8"
+                                    android:textSize="13sp" />
+
+                                <TextView
+                                    android:id="@+id/tv_telemetry_ping"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:text="40 ms"
+                                    android:textColor="@color/white"
+                                    android:textSize="20sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <!-- Traffic Sub-card -->
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="88dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="6dp"
+                                android:background="@drawable/bg_telemetry_subcard"
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:padding="12dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Traffic"
+                                    android:textColor="#88A0B8"
+                                    android:textSize="13sp" />
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="6dp"
+                                    android:gravity="center"
+                                    android:orientation="horizontal">
+
+                                    <TextView
+                                        android:id="@+id/tv_telemetry_traffic_tx"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="↑ 3.2 MB"
+                                        android:textColor="#42A5F5"
+                                        android:textSize="14sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:id="@+id/tv_telemetry_traffic_rx"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="8dp"
+                                        android:text="↓ 15.3 MB"
+                                        android:textColor="#52D68A"
+                                        android:textSize="14sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+                            </LinearLayout>
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- CARD 2: NETWORK TELEMETRY MONITOR -->
+                    <LinearLayout
+                        android:id="@+id/card_telemetry_monitor"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:layout_marginBottom="24dp"
+                        android:background="@drawable/bg_telemetry_card"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <!-- Header Row -->
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentStart="true"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <ImageView
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:layout_marginEnd="8dp"
+                                    android:contentDescription="Speedometer"
+                                    android:src="@drawable/ic_speedometer" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:letterSpacing="0.03"
+                                    android:text="NETWORK TELEMETRY MONITOR"
+                                    android:textColor="#52D68A"
+                                    android:textSize="13sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:letterSpacing="0.04"
+                                android:text="LIVE TELEMETRY"
+                                android:textColor="#42A5F5"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+                        </RelativeLayout>
+
+                        <!-- Two sub-cards: Download Speed & Upload Speed -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="14dp"
+                            android:orientation="horizontal">
+
+                            <!-- Download Speed Sub-card -->
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="88dp"
+                                android:layout_weight="1"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/bg_telemetry_subcard"
+                                android:gravity="center_vertical"
+                                android:orientation="vertical"
+                                android:paddingHorizontal="16dp"
+                                android:paddingVertical="12dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Download Speed"
+                                    android:textColor="#88A0B8"
+                                    android:textSize="13sp" />
+
+                                <TextView
+                                    android:id="@+id/tv_telemetry_speed_down"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:text="250.4 KB/s"
+                                    android:textColor="#52D68A"
+                                    android:textSize="20sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <!-- Upload Speed Sub-card -->
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="88dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="6dp"
+                                android:background="@drawable/bg_telemetry_subcard"
+                                android:gravity="center_vertical"
+                                android:orientation="vertical"
+                                android:paddingHorizontal="16dp"
+                                android:paddingVertical="12dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Upload Speed"
+                                    android:textColor="#88A0B8"
+                                    android:textSize="13sp" />
+
+                                <TextView
+                                    android:id="@+id/tv_telemetry_speed_up"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:text="165.0 KB/s"
+                                    android:textColor="#42A5F5"
+                                    android:textSize="20sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+                        </LinearLayout>
+                    </LinearLayout>
                 </LinearLayout>
             </ScrollView>
 
@@ -1039,87 +1387,7 @@
                             android:textSize="15sp" />
                     </LinearLayout>
 
-                    <!-- Field 6: โหมดการเชื่อมต่อ & Payload ที่ผูกไว้ -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        android:background="@drawable/bg_neon_card_subtle"
-                        android:orientation="vertical"
-                        android:padding="14dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:drawableStart="@drawable/ic_link_chain"
-                            android:drawablePadding="10dp"
-                            android:gravity="center_vertical"
-                            android:text="@string/label_server_mode"
-                            android:textColor="@color/white"
-                            android:textSize="15sp"
-                            android:textStyle="bold" />
-
-                        <!-- Direct SSH radio row -->
-                        <LinearLayout
-                            android:id="@+id/row_server_mode_direct"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="12dp"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <ImageView
-                                android:id="@+id/iv_mode_direct_radio"
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:src="@drawable/bg_radio_checked" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="10dp"
-                                android:text="Direct SSH (เชื่อมต่อ SSH ตรง ไม่ใช้ Payload)"
-                                android:textColor="@color/white"
-                                android:textSize="14sp" />
-                        </LinearLayout>
-
-                        <!-- Payload proxy radio row -->
-                        <LinearLayout
-                            android:id="@+id/row_server_mode_payload"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="12dp"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <ImageView
-                                android:id="@+id/iv_mode_payload_radio"
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:src="@drawable/bg_radio_unchecked" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="10dp"
-                                android:text="เชื่อมต่อผ่าน HTTP Payload Proxy"
-                                android:textColor="@color/white"
-                                android:textSize="14sp" />
-                        </LinearLayout>
-
-                        <!-- Payload choice dropdown -->
-                        <Spinner
-                            android:id="@+id/spinner_server_payload_choice"
-                            android:layout_width="match_parent"
-                            android:layout_height="48dp"
-                            android:layout_marginTop="12dp"
-                            android:background="@drawable/bg_input_field"
-                            android:visibility="gone" />
-                    </LinearLayout>
 
                     <!-- ACTION BUTTONS: บันทึกการแก้ไข & บันทึกเป็นรายการใหม่ -->
                     <LinearLayout

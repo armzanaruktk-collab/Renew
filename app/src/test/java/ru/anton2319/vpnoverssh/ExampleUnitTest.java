@@ -172,4 +172,22 @@ public class ExampleUnitTest {
         assertNotNull(first);
         assertNotNull(second);
     }
+
+    @Test
+    public void testDelegatingSocketBannerPushback() throws java.io.IOException {
+        java.net.Socket dummySocket = new java.net.Socket();
+        String banner = "SSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.1\r\n";
+        byte[] bannerBytes = banner.getBytes(java.nio.charset.StandardCharsets.ISO_8859_1);
+        java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(bannerBytes);
+
+        ru.anton2319.vpnoverssh.proxy.HttpCustomProxyData.DelegatingSocket delegatingSocket =
+                new ru.anton2319.vpnoverssh.proxy.HttpCustomProxyData.DelegatingSocket(dummySocket, bais);
+
+        java.io.InputStream in = delegatingSocket.getInputStream();
+        assertNotNull(in);
+        byte[] readBuffer = new byte[bannerBytes.length];
+        int bytesRead = in.read(readBuffer);
+        assertEquals(bannerBytes.length, bytesRead);
+        assertEquals(banner, new String(readBuffer, java.nio.charset.StandardCharsets.ISO_8859_1));
+    }
 }
