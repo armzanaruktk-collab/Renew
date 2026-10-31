@@ -1,0 +1,107 @@
+<resources>
+    <string name="app_name">godarmxvpn</string>
+    <string name="title_activity_settings">godarmxvpn Settings</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">หน้าหลัก</string>
+    <string name="nav_payload">Payload</string>
+    <string name="nav_settings">ตั้งค่า</string>
+    <string name="nav_menu">เมนู</string>
+    <string name="nav_logs">บันทึกการทำงาน</string>
+
+    <!-- Logging View -->
+    <string name="log_view_title">บันทึกการเชื่อมต่อ (Log)</string>
+    <string name="log_copy">คัดลอก Log</string>
+    <string name="log_clear">ล้าง Log</string>
+    <string name="log_empty">ยังไม่มีบันทึกการเชื่อมต่อในขณะนี้</string>
+    <string name="log_copied_toast">คัดลอกบันทึกการเชื่อมต่อไปยังคลิปบอร์ดแล้ว</string>
+    <string name="btn_view_live_log">ดูสถานะ Log สด (Live Console)</string>
+
+    <!-- Home Screen -->
+    <string name="server_list">รายการเซิร์ฟเวอร์</string>
+    <string name="payload_list">รายการ Payload</string>
+    <string name="version_label">เวอร์ชั่น: (1.1)</string>
+    <string name="status_ready">สถานะ: พร้อมเชื่อมต่อ</string>
+    <string name="status_ready_desc">พร้อมใช้งานสำหรับเชื่อมต่อ</string>
+    <string name="status_connecting">สถานะ: กำลังเชื่อมต่อ...</string>
+    <string name="status_connecting_desc">กำลังสร้างอุโมงค์ SSH...</string>
+    <string name="status_connected">สถานะ: เชื่อมต่อแล้ว</string>
+    <string name="status_connected_desc">เชื่อมต่อสำเร็จ พร้อมใช้งาน</string>
+    <string name="btn_connect">เชื่อมต่อ</string>
+    <string name="btn_disconnect">ยกเลิกการเชื่อมต่อ</string>
+
+    <!-- SSH Screen -->
+    <string name="ssh_header_title">SSH</string>
+    <string name="server_ssh">เซิร์ฟเวอร์ SSH</string>
+    <string name="select_payload">เลือก Payload</string>
+    <string name="direct_ssh_option">Direct SSH (ไม่ใช้ Payload)</string>
+
+    <!-- SSH Server Manager & Editor -->
+    <string name="server_manage_title">จัดการเซิร์ฟเวอร์ SSH</string>
+    <string name="server_add_title">เพิ่มเซิร์ฟเวอร์ SSH</string>
+    <string name="server_edit_title">แก้ไขเซิร์ฟเวอร์ SSH</string>
+    <string name="label_server_name">ชื่อเซิร์ฟเวอร์ *</string>
+    <string name="hint_server_name">เช่น bd_ready_01 หรือ TH-Gaming-01</string>
+    <string name="label_server_host">SSH Host / IP *</string>
+    <string name="hint_server_host">เช่น bd.sshserver.net หรือ 128.199.200.1</string>
+    <string name="label_server_port">SSH Port *</string>
+    <string name="hint_server_port">เช่น 22 หรือ 443</string>
+    <string name="label_server_user">ชื่อผู้ใช้ (Username) *</string>
+    <string name="hint_server_user">เช่น vpnuser หรือ root</string>
+    <string name="label_server_password">รหัสผ่าน (Password) *</string>
+    <string name="hint_server_password">กรอกรหัสผ่าน SSH...</string>
+    <string name="label_server_mode">โหมดการเชื่อมต่อ</string>
+    <string name="btn_save_as_new">บันทึกเป็นรายการใหม่</string>
+    <string name="btn_save_changes">บันทึกการแก้ไข</string>
+    <string name="btn_delete_server">ลบเซิร์ฟเวอร์</string>
+    <string name="confirm_delete_server">ต้องการลบเซิร์ฟเวอร์นี้หรือไม่?</string>
+    <string name="server_saved_toast">บันทึกเซิร์ฟเวอร์เรียบร้อยแล้ว</string>
+    <string name="server_saved_as_new_toast">บันทึกเป็นเซิร์ฟเวอร์ใหม่เรียบร้อยแล้ว</string>
+    <string name="server_deleted_toast">ลบเซิร์ฟเวอร์เรียบร้อยแล้ว</string>
+
+    <!-- Payload Manager & Editor -->
+    <string name="payload_manage_title">จัดการ Payload</string>
+    <string name="payload_add_title">เพิ่ม Payload</string>
+    <string name="payload_edit_title">แก้ไข Payload</string>
+    <string name="label_payload_name">ชื่อ Payload *</string>
+    <string name="hint_payload_name">เช่น MyPayload-TH</string>
+    <string name="label_payload_desc">รายละเอียด (ไม่บังคับ)</string>
+    <string name="hint_payload_desc">คำอธิบายการใช้งาน</string>
+    <string name="label_payload_body">HTTP Custom Payload *</string>
+    <string name="hint_payload_body">เช่น CONNECT [host_port] [protocol][crlf]Host: [host][crlf]User-Agent: [ua][crlf][keep][crlf][crlf]</string>
+    <string name="label_proxy_host">Remote Proxy Host *</string>
+    <string name="hint_proxy_host">เช่น proxy.example.com</string>
+    <string name="label_proxy_port">Remote Proxy Port *</string>
+    <string name="hint_proxy_port">เช่น 8080 (1-65535)</string>
+    <string name="btn_clear">ล้างข้อมูล</string>
+    <string name="btn_save">บันทึก</string>
+
+    <!-- Connecting Screen -->
+    <string name="connecting_title">กำลังเชื่อมต่อ SSH...</string>
+    <string name="step_proxy_done">เชื่อมต่อ Proxy สำเร็จ</string>
+    <string name="step_ssh_connecting">กำลังเชื่อมต่อ SSH Server</string>
+    <string name="step_routing_setup">กำลังตั้งค่าเส้นทางเครือข่าย</string>
+    <string name="btn_cancel">ยกเลิก</string>
+
+    <!-- Drawer Menu -->
+    <string name="menu_main_heading">เมนูหลัก</string>
+    <string name="menu_user_guide">คู่มือการใช้งาน</string>
+    <string name="menu_about_app">เกี่ยวกับแอป</string>
+    <string name="menu_exit">ออกจากระบบ</string>
+
+    <!-- Preference Titles -->
+    <string name="vpn_header">VPN Preferences</string>
+    <string name="vpn_description">Configures what traffic goes into the tunnel</string>
+    <string name="ssh_header">SSH Preferences</string>
+    <string name="ssh_description">Configures how your device connects to the server</string>
+
+    <!-- VPN Preferences -->
+    <string name="dns_title">DNS Resolver IP</string>
+    <string name="dns_ip_description">Use a custom DNS server. Leave empty to use defaults. Warning! DNS queries will always bypass VPN.</string>
+    <string name="apps_title">Included Apps</string>
+    <string name="apps_description">Choose which apps will use the tunnel and which will connect directly. By default, all apps are included in the tunnel</string>
+
+    <!-- SSH Preferences -->
+    <string name="forwarder_port_title">Forwarder port</string>
+    <string name="forwarder_port_description">Manually assign a port for SSH forwarder. Port will be assigned automatically if empty:</string>
+</resources>

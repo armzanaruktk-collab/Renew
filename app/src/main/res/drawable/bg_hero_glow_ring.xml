@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Outer faint glow -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#1A00E676" />
+            <size android:width="120dp" android:height="120dp" />
+        </shape>
+    </item>
+    <!-- Middle ring -->
+    <item android:top="8dp" android:left="8dp" android:right="8dp" android:bottom="8dp">
+        <shape android:shape="oval">
+            <solid android:color="#3300E676" />
+            <stroke android:width="2dp" android:color="#8000E676" />
+        </shape>
+    </item>
+    <!-- Inner bright circle -->
+    <item android:top="16dp" android:left="16dp" android:right="16dp" android:bottom="16dp">
+        <shape android:shape="oval">
+            <solid android:color="#0B2618" />
+            <stroke android:width="3dp" android:color="#00E676" />
+        </shape>
+    </item>
+</layer-list>

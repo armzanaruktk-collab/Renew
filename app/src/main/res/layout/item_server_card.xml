@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="10dp"
+    android:background="@drawable/bg_neon_card"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="14dp">
+
+    <!-- Radio Indicator -->
+    <ImageView
+        android:id="@+id/iv_server_radio"
+        android:layout_width="26dp"
+        android:layout_height="26dp"
+        android:contentDescription="Select Server"
+        android:src="@drawable/bg_radio_unchecked" />
+
+    <!-- Country Flag / Icon -->
+    <ImageView
+        android:id="@+id/iv_server_flag"
+        android:layout_width="30dp"
+        android:layout_height="22dp"
+        android:layout_marginStart="12dp"
+        android:contentDescription="Server Location"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_flag_th" />
+
+    <!-- Details -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tv_server_item_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="bd_ready_01"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_server_item_details"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:text="bd.sshserver.net:22 (vpnuser)"
+            android:textColor="@color/text_muted"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <!-- Edit Button -->
+    <ImageView
+        android:id="@+id/btn_server_item_edit"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Edit"
+        android:padding="8dp"
+        android:src="@drawable/ic_pencil_edit"
+        app:tint="@color/neon_green" />
+
+    <!-- Delete Button -->
+    <ImageView
+        android:id="@+id/btn_server_item_delete"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="2dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Delete"
+        android:padding="8dp"
+        android:src="@drawable/ic_trash_bin"
+        app:tint="@color/white" />
+
+</LinearLayout>

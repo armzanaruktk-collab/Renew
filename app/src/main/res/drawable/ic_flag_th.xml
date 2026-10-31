@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="28dp"
+    android:height="18dp"
+    android:viewportWidth="900"
+    android:viewportHeight="600">
+    <!-- Red background -->
+    <path
+        android:fillColor="#A51931"
+        android:pathData="M0,0h900v600h-900z"/>
+    <!-- White middle band -->
+    <path
+        android:fillColor="#F4F5F8"
+        android:pathData="M0,100h900v400h-900z"/>
+    <!-- Blue central band -->
+    <path
+        android:fillColor="#2D2A4A"
+        android:pathData="M0,200h900v200h-900z"/>
+</vector>
