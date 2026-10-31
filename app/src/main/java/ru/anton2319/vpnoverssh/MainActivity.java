@@ -1245,6 +1245,50 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupDrawerEvents() {
+    private void showNetmodMenu() {
+        final String[] items = {
+                "Direct SSH",
+                "Payload",
+                "HTTP Proxy / Proxy Payload",
+                "SSL/TLS",
+                "VPN Tunnel",
+                "Connection Logs"
+        };
+        new AlertDialog.Builder(this)
+                .setTitle("NETMOD SSH")
+                .setItems(items, (dialog, which) -> {
+                    switch (which) {
+                        case 0:
+                            showServerPicker();
+                            break;
+                        case 1:
+                        case 2:
+                            showScreen(1);
+                            break;
+                        case 3:
+                            new AlertDialog.Builder(this)
+                                    .setTitle("SSL/TLS")
+                                    .setMessage("ส่วน SSL/TLS แยกยังไม่เชื่อมกับระบบ tunnel ในรุ่นนี้ จึงยังไม่แสดงว่าใช้งานได้")
+                                    .setPositiveButton(android.R.string.ok, null)
+                                    .show();
+                            break;
+                        case 4:
+                            showScreen(0);
+                            break;
+                        case 5:
+                            showScreen(6);
+                            break;
+                    }
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+        findViewById(R.id.drawer_item_netmod).setOnClickListener(v -> {
+            drawerLayout.closeDrawer(GravityCompat.END);
+            showNetmodMenu();
+        });
+
         findViewById(R.id.drawer_item_home).setOnClickListener(v -> {
             drawerLayout.closeDrawer(GravityCompat.END);
             showScreen(0);
