@@ -48,8 +48,9 @@ public class NewConnectionActivity extends AppCompatActivity {
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        sshConnectionProfileManager = new SSHConnectionProfileManager(this);
-        payloadManager = new PayloadProfileManager(this);
+        boolean netmodMode = getIntent().getBooleanExtra("netmod_mode", false);
+        sshConnectionProfileManager = new SSHConnectionProfileManager(this, netmodMode);
+        payloadManager = new PayloadProfileManager(this, netmodMode);
         if (getIntent().getStringExtra("uuid") != null) {
             profileUuid = UUID.fromString(getIntent().getStringExtra("uuid"));
         }
