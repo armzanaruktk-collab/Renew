@@ -112,13 +112,21 @@ public class SocksProxyService extends VpnService {
                 addRoutesExcluding(builder, excludedIps);
             }
             ru.anton2319.vpnoverssh.utils.ConnectionLogger.getInstance().info("กำหนด DNS Resolver IP: " + getDnsIpFuture.get());
-            if (getSelectedAppsFuture.get().isEmpty()) {
-                builder.addDnsServer(getDnsIpFuture.get())
-                        .addDisallowedApplication(getPackageName());
-            }
-            else {
-                for (String packageName : getSelectedAppsFuture.get()) {
-                    builder.addAllowedApplication(packageName);
+            // Always configure DNS, regardless of whether the user selected
+            // all apps or only a subset. Without this, selected-app mode can
+            // establish a TUN interface but DNS requests have no VPN resolver.
+            builder.addDnsServer(getDnsIpFuture.get());
+
+            Set<String> selectedApps = getSelectedAppsFuture.get();
+            if (selectedApps == null || selectedApps.isEmpty()) {
+                // Route all apps except this VPN app to avoid routing the local
+                // SOCKS control connection back into its own TUN interface.
+                builder.addDisallowedApplication(getPackageName());
+            } else {
+                for (String packageName : selectedApps) {
+                    if (packageName != null && !packageName.trim().isEmpty()) {
+                        builder.addAllowedApplication(packageName);
+                    }
                 }
             }
 
@@ -147,12 +155,18 @@ public class SocksProxyService extends VpnService {
             engine.Engine.start();
             ru.anton2319.vpnoverssh.utils.ConnectionLogger.getInstance().success("Tun2Socks ทำงานแล้ว: อุโมงค์ VPN พร้อมรับ-ส่งข้อมูลทั้งหมดผ่าน SSH");
 
-            while (true) {
-                if (Thread.interrupted()) {
-                    Log.d(TAG, "Interruption signal received");
-                    throw new InterruptedException();
+            // Do not busy-spin here: the previous tight loop consumed a CPU
+            // core continuously after the VPN engine had started. Keep the
+            // service thread responsive to stop requests without starving
+            // tun2socks or the SSH forwarding threads.
+            while (!Thread.currentThread().isInterrupted()) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 }
             }
+            throw new InterruptedException();
         } catch (InterruptedException e) {
             Log.d(TAG, "Stopping service");
             ru.anton2319.vpnoverssh.utils.ConnectionLogger.getInstance().info("บริการ VPN หยุดทำงานตามคำสั่ง");
