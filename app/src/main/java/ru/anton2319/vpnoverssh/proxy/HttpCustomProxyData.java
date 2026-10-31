@@ -183,15 +183,10 @@ public class HttpCustomProxyData implements ProxyData {
                         + (statusCode == 407 ? " — Proxy ต้องการการยืนยันตัวตน (407)" : ""));
             }
 
-            // A non-CONNECT payload is accepted only for an explicit WebSocket upgrade.
-            boolean requestedWebSocket = expandedPayload.toLowerCase(Locale.ROOT).contains("upgrade: websocket")
-                    && expandedPayload.toLowerCase(Locale.ROOT).contains("connection: upgrade");
-            boolean responseWebSocket = "websocket".equalsIgnoreCase(headers.get("upgrade"))
-                    && headers.getOrDefault("connection", "").toLowerCase(Locale.ROOT).contains("upgrade");
-            if (statusCode == 101 && requestedWebSocket && responseWebSocket) {
-                ConnectionLogger.getInstance().success("WebSocket Upgrade สำเร็จ (" + statusLine + ")");
-                socket.setSoTimeout(0);
-                return socket;
+            // This SSH library uses a raw TCP stream and does not decode WebSocket frames.
+            // Therefore even a valid 101 upgrade cannot be passed through as an SSH socket.
+            if (statusCode == 101) {
+                throw new IOException("ได้รับ HTTP 101 Switching Protocols แต่ SSH transport นี้ยังไม่รองรับ WebSocket framing");
             }
 
             if (statusCode >= 300 && statusCode < 400) {
