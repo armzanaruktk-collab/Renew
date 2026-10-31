@@ -130,14 +130,14 @@ public class SSHConnectionProfileManager {
     public synchronized List<SSHConnectionProfile> seedDefaults() {
         List<SSHConnectionProfile> defaults = new ArrayList<>();
         SSHConnectionProfile p1 = new SSHConnectionProfile("bd.sshserver.net", 22, "vpnuser", SSHConnectionProfile.AuthenticationType.PASSWORD);
-        p1.setProfileName("bd_ready_01");
+        p1.setProfileName("bd_ready_01 (ตัวอย่าง)");
         p1.setPassword("vpnpassword");
         p1.setConnectionMode("PAYLOAD");
         p1.setPayloadUuid("default-mypayload-uuid");
         defaults.add(p1);
 
         SSHConnectionProfile p2 = new SSHConnectionProfile("sg.sshserver.net", 443, "vpnuser", SSHConnectionProfile.AuthenticationType.PASSWORD);
-        p2.setProfileName("SG_Gaming_01");
+        p2.setProfileName("SG_Gaming_01 (ตัวอย่าง)");
         p2.setPassword("vpnpassword");
         p2.setConnectionMode("DIRECT");
         defaults.add(p2);

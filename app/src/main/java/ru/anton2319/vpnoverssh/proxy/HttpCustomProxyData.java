@@ -68,7 +68,11 @@ public class HttpCustomProxyData implements ProxyData {
                 ConnectionLogger.getInstance().info("กำลังเชื่อมต่อ Remote Proxy: " + connectHost + ":" + connectPort + "...");
             }
 
-            socket.connect(new InetSocketAddress(connectHost, connectPort), timeout);
+            InetSocketAddress endpoint = new InetSocketAddress(connectHost, connectPort);
+            if (endpoint.isUnresolved()) {
+                throw new java.net.UnknownHostException("ไม่สามารถค้นหา IP ของโฮสต์ " + connectHost + " (Unresolved host)");
+            }
+            socket.connect(endpoint, timeout);
             socket.setSoTimeout(timeout);
             ConnectionLogger.getInstance().success("TCP เชื่อมต่อสำเร็จ (" + connectHost + ":" + connectPort + ")");
 

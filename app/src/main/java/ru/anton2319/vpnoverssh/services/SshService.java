@@ -95,8 +95,24 @@ public class SshService extends Service {
             Log.i(TAG, "Connecting directly to SSH server " + host + ":" + port);
         }
 
-        ConnectionLogger.getInstance().info("กำลังเริ่ม TCP Connection และเจรจา Handshake...");
-        conn.connect();
+        // Pre-flight DNS resolution check for clear diagnostic logging
+        ConnectionLogger.getInstance().info("กำลังตรวจสอบ DNS และค้นหา IP ของ " + host + "...");
+        try {
+            java.net.InetAddress[] ips = java.net.InetAddress.getAllByName(host);
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < ips.length; i++) {
+                if (i > 0) sb.append(", ");
+                sb.append(ips[i].getHostAddress());
+            }
+            ConnectionLogger.getInstance().info("DNS สำเร็จ: IP เซิร์ฟเวอร์คือ [" + sb + "]");
+        } catch (java.net.UnknownHostException uhe) {
+            ConnectionLogger.getInstance().error("DNS Lookup ล้มเหลว: ไม่พบโฮสต์ \"" + host + "\" ในระบบเครือข่ายอินเทอร์เน็ต");
+            ConnectionLogger.getInstance().warn("ข้อเสนอแนะ: โฮสต์ '" + host + "' ไม่มีอยู่จริงหรือโดเมนหมดอายุ กรุณาเปลี่ยนเป็น IP หรือโดเมนเซิร์ฟเวอร์จริงของคุณ");
+            throw new IOException("Cannot resolve SSH host '" + host + "': UnknownHostException", uhe);
+        }
+
+        ConnectionLogger.getInstance().info("กำลังเริ่ม TCP Connection และเจรจา Handshake (timeout: 15s)...");
+        conn.connect(null, 15000, 15000);
         ConnectionLogger.getInstance().success("SSH Handshake เชื่อมต่อสำเร็จ!");
         PortForward.getInstance().setConn(conn);
 
@@ -137,7 +153,7 @@ public class SshService extends Service {
     /*
      * Parses payload headers using HttpCustomPayloadHandler for backwards compatibility.
      */
-    static String[] parseConnectPayload(String template, String sshHost, int sshPort) throws IOException {
+    public static String[] parseConnectPayload(String template, String sshHost, int sshPort) throws IOException {
         if (template == null || template.trim().isEmpty()) throw new IOException("Payload is empty");
         String expanded = HttpCustomPayloadHandler.expandPayload(template, sshHost, sshPort, "", 0, null);
         String normalized = expanded.replace("\r\n", "\n").replace("\r", "\n");
@@ -180,6 +196,8 @@ public class SshService extends Service {
 
     private Thread newSshThread(Intent intent) {
         return new Thread(() -> {
+            String targetHost = intent != null ? intent.getStringExtra("hostname") : "unknown";
+            String targetPort = intent != null ? intent.getStringExtra("port") : "22";
             try {
                 System.setProperty("user.home", getFilesDir().getAbsolutePath());
                 initiateSSH(intent);
@@ -188,10 +206,49 @@ public class SshService extends Service {
                     catch (InterruptedException e) { Thread.currentThread().interrupt(); }
                 }
             } catch (IOException | RuntimeException e) {
-                Log.e(TAG, "SSH tunnel failed: " + e.getMessage(), e);
+                Throwable root = e;
+                while (root.getCause() != null && root.getCause() != root) {
+                    root = root.getCause();
+                }
+                String rootMsg = root.getMessage() != null ? root.getMessage() : root.toString();
+                Log.e(TAG, "SSH tunnel failed: " + rootMsg, e);
                 StatusInfo.getInstance().setActive(false);
-                ConnectionLogger.getInstance().error("SSH ล้มเหลว: " + e.getMessage());
-                ConnectionLogger.getInstance().warn("แนวทางแก้ไข: ตรวจสอบว่าโฮสต์ SSH ออนไลน์, พอร์ตไม่ถูกบล็อก, และข้อมูลรหัสผ่าน/คีย์ถูกต้อง");
+
+                if (root instanceof java.net.UnknownHostException || rootMsg.contains("UnknownHost")
+                        || rootMsg.contains("Name or service not known") || rootMsg.contains("Cannot resolve")) {
+                    ConnectionLogger.getInstance().error("SSH ขัดข้อง (DNS): ไม่พบชื่อโฮสต์ \"" + targetHost + "\"");
+                    ConnectionLogger.getInstance().warn("แนวทางแก้ไข: โฮสต์นี้ไม่มีอยู่จริง กรุณาแก้ไขเซิร์ฟเวอร์โดยเปลี่ยนเป็น IP หรือโดเมน SSH จริงของคุณ");
+                } else if (root instanceof java.net.SocketTimeoutException || rootMsg.contains("timed out")
+                        || rootMsg.contains("timeout")) {
+                    ConnectionLogger.getInstance().error("SSH ขัดข้อง (Timeout): ไม่สามารถเชื่อมต่อกับ " + targetHost + ":" + targetPort + " ได้ภายใน 15 วินาที");
+                    ConnectionLogger.getInstance().warn("แนวทางแก้ไข: เซิร์ฟเวอร์ไม่ตอบสนอง หรือพอร์ต " + targetPort + " ถูกเครือข่าย/ไฟร์วอลล์บล็อก");
+                } else if (root instanceof java.net.ConnectException || rootMsg.contains("Connection refused")) {
+                    ConnectionLogger.getInstance().error("SSH ขัดข้อง (Connection Refused): เซิร์ฟเวอร์ปฏิเสธการเชื่อมต่อบนพอร์ต " + targetPort);
+                    ConnectionLogger.getInstance().warn("แนวทางแก้ไข: ตรวจสอบว่าพอร์ต " + targetPort + " เปิดให้บริการ SSH หรือไม่");
+                } else {
+                    ConnectionLogger.getInstance().error("SSH ล้มเหลว: " + rootMsg);
+                    ConnectionLogger.getInstance().warn("แนวทางแก้ไข: ตรวจสอบข้อมูลเซิร์ฟเวอร์ SSH พอร์ต และความถูกต้องของข้อมูลรับรอง");
+                }
+
+                // Stop and clean up VPN interface if active so device network is not blocked
+                try {
+                    Thread vpnThread = ru.anton2319.vpnoverssh.data.singleton.SocksPersistent.getInstance().getVpnThread();
+                    if (vpnThread != null) {
+                        vpnThread.interrupt();
+                    }
+                    Intent vpnIntent = StatusInfo.getInstance().getVpnIntent();
+                    if (vpnIntent != null) {
+                        stopService(vpnIntent);
+                    }
+                    android.os.ParcelFileDescriptor pfd = ru.anton2319.vpnoverssh.data.singleton.SocksPersistent.getInstance().getVpnInterface();
+                    if (pfd != null) {
+                        pfd.close();
+                        ru.anton2319.vpnoverssh.data.singleton.SocksPersistent.getInstance().setVpnInterface(null);
+                    }
+                } catch (Exception ex) {
+                    Log.w(TAG, "Failed to clean up VPN interface on SSH failure", ex);
+                }
+
                 closeConnection();
                 stopSelf();
             } finally {

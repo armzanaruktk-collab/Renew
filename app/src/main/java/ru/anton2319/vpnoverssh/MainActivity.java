@@ -1107,12 +1107,33 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        String host = selectedSshProfile.getServerIP();
+        if (host == null || host.trim().isEmpty()) {
+            Toast.makeText(this, "กรุณาระบุไอพีหรือโฮสต์เซิร์ฟเวอร์ SSH ก่อนเชื่อมต่อ", Toast.LENGTH_LONG).show();
+            openServerEditor(selectedSshProfile);
+            return;
+        }
+
         if (!isDirectSsh && selectedPayloadProfile == null) {
             Toast.makeText(this, "กรุณาเลือกหรือสร้าง Payload ก่อนเชื่อมต่อ", Toast.LENGTH_LONG).show();
             showScreen(1);
             return;
         }
 
+        if ("bd.sshserver.net".equalsIgnoreCase(host.trim()) || "sg.sshserver.net".equalsIgnoreCase(host.trim())) {
+            new AlertDialog.Builder(this)
+                    .setTitle("เซิร์ฟเวอร์ตัวอย่าง (Sample Server)")
+                    .setMessage("เซิร์ฟเวอร์ \"" + host + "\" เป็นตัวอย่างแม่แบบ ยังไม่มีบัญชี SSH จริง\n\nต้องการแก้ไขข้อมูลเพื่อใส่ IP Address หรือโฮสต์เซิร์ฟเวอร์ SSH ของคุณตอนนี้เลยหรือไม่?")
+                    .setPositiveButton("แก้ไขเซิร์ฟเวอร์", (dialog, which) -> openServerEditor(selectedSshProfile))
+                    .setNegativeButton("ลองเชื่อมต่อ", (dialog, which) -> proceedWithConnectSequence())
+                    .show();
+            return;
+        }
+
+        proceedWithConnectSequence();
+    }
+
+    private void proceedWithConnectSequence() {
         // Prepare VPN
         Intent intentPrepare = VpnService.prepare(this);
         if (intentPrepare != null) {
@@ -1127,17 +1148,25 @@ public class MainActivity extends AppCompatActivity {
         ivStepProxyStatus.setImageResource(R.drawable.bg_radio_unchecked);
         ivStepProxyStatus.setColorFilter(getColor(R.color.text_muted));
         tvStepProxyText.setTextColor(getColor(R.color.text_muted));
+        tvStepProxyText.setText(R.string.step_proxy_done);
 
         ivStepSshStatus.setImageResource(R.drawable.bg_radio_unchecked);
         ivStepSshStatus.setColorFilter(getColor(R.color.text_muted));
         tvStepSshText.setTextColor(getColor(R.color.text_muted));
+        tvStepSshText.setText(R.string.step_ssh_connecting);
 
         ivStepRoutingStatus.setImageResource(R.drawable.bg_radio_unchecked);
         ivStepRoutingStatus.setColorFilter(getColor(R.color.text_muted));
         tvStepRoutingText.setTextColor(getColor(R.color.text_muted));
+        tvStepRoutingText.setText(R.string.step_routing_setup);
 
         tvConnectingHeading.setText(R.string.connecting_title);
         tvConnectingHeading.setTextColor(getColor(R.color.white));
+
+        if (btnConnectingCancel != null) {
+            btnConnectingCancel.setText(R.string.btn_cancel);
+            btnConnectingCancel.setBackgroundResource(R.drawable.bg_button_cancel);
+        }
 
         launchBackendVpn();
     }
@@ -1180,6 +1209,14 @@ public class MainActivity extends AppCompatActivity {
             vpnThread.interrupt();
         }
         stopService(sshIntent);
+        stopService(vpnIntent);
+        try {
+            android.os.ParcelFileDescriptor pfd = SocksPersistent.getInstance().getVpnInterface();
+            if (pfd != null) {
+                pfd.close();
+                SocksPersistent.getInstance().setVpnInterface(null);
+            }
+        } catch (Exception ignored) {}
         updateHomeDisplays();
         Toast.makeText(this, "ยกเลิกการเชื่อมต่อแล้ว", Toast.LENGTH_SHORT).show();
     }
@@ -1325,8 +1362,20 @@ public class MainActivity extends AppCompatActivity {
         }
         if (entry.level == ru.anton2319.vpnoverssh.utils.ConnectionLogger.Level.ERROR) {
             if (tvConnectingHeading != null) {
-                tvConnectingHeading.setText("การเชื่อมต่อขัดข้อง: " + entry.message);
+                tvConnectingHeading.setText("การเชื่อมต่อขัดข้อง");
                 tvConnectingHeading.setTextColor(Color.parseColor("#FF5252"));
+            }
+            if (ivStepSshStatus != null) {
+                ivStepSshStatus.setImageResource(R.drawable.baseline_delete_24);
+                ivStepSshStatus.setColorFilter(Color.parseColor("#FF5252"));
+            }
+            if (tvStepSshText != null) {
+                tvStepSshText.setText(entry.message);
+                tvStepSshText.setTextColor(Color.parseColor("#FF8A80"));
+            }
+            if (btnConnectingCancel != null) {
+                btnConnectingCancel.setText("กลับหน้าหลัก (ตรวจสอบ / แก้ไขเซิร์ฟเวอร์)");
+                btnConnectingCancel.setBackgroundResource(R.drawable.bg_button_connect);
             }
             updateHomeDisplays();
         }

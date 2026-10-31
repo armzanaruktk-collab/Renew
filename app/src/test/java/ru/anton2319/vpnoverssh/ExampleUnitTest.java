@@ -190,4 +190,20 @@ public class ExampleUnitTest {
         assertEquals(bannerBytes.length, bytesRead);
         assertEquals(banner, new String(readBuffer, java.nio.charset.StandardCharsets.ISO_8859_1));
     }
+
+    @Test
+    public void testParseConnectPayload() throws java.io.IOException {
+        String template = "CONNECT [host_port] HTTP/1.1[crlf]Host: [host][crlf]X-Online-Host: [host][crlf]User-Agent: [ua][crlf][keep][crlf][crlf]";
+        String[] headers = ru.anton2319.vpnoverssh.services.SshService.parseConnectPayload(template, "127.0.0.1", 22);
+        assertNotNull(headers);
+        assertTrue(headers.length > 0);
+        boolean hasOnlineHost = false;
+        for (String h : headers) {
+            if (h.startsWith("X-Online-Host:")) {
+                hasOnlineHost = true;
+                break;
+            }
+        }
+        assertTrue("Headers should contain X-Online-Host", hasOnlineHost);
+    }
 }
