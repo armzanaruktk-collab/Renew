@@ -36,14 +36,15 @@ public class PayloadManagerActivity extends AppCompatActivity {
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
-        manager = new PayloadProfileManager(this);
+        boolean netmodMode = getIntent().getBooleanExtra("netmod_mode", false);
+        manager = new PayloadProfileManager(this, netmodMode);
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(BG);
 
         TextView toolbar = new TextView(this);
-        toolbar.setText("‹    Payload");
+        toolbar.setText(netmodMode ? "‹    NETMOD Payload" : "‹    Payload");
         toolbar.setTextColor(Color.WHITE);
         toolbar.setTextSize(21);
         toolbar.setTypeface(null, Typeface.BOLD);
