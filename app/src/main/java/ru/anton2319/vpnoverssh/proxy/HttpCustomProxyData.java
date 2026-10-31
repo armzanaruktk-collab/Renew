@@ -18,6 +18,9 @@ import java.net.SocketException;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Locale;
 
 import ru.anton2319.vpnoverssh.utils.ConnectionLogger;
 import ru.anton2319.vpnoverssh.utils.HttpCustomPayloadHandler;
@@ -119,15 +122,13 @@ public class HttpCustomProxyData implements ProxyData {
             InputStream in = socket.getInputStream();
             String statusLine = readLine(in);
             if (statusLine == null) {
-                ConnectionLogger.getInstance().warn("ไม่ได้รับข้อมูล HTTP Response กลับ (เริ่ม SSH Handshake ทันที)");
-                socket.setSoTimeout(0);
-                return socket;
+                throw new IOException("ไม่ได้รับ HTTP response จาก Remote Proxy; ไม่สามารถยืนยัน SSH tunnel ได้");
             }
 
             statusLine = statusLine.trim();
             ConnectionLogger.getInstance().info("ตอบกลับ: " + statusLine);
 
-            // 1. If server responded with SSH banner directly (Direct SSH with payload)
+            // A direct SSH banner is valid and must be pushed back for the SSH library.
             if (statusLine.startsWith("SSH-")) {
                 ConnectionLogger.getInstance().success("เซิร์ฟเวอร์ส่ง SSH Banner สำเร็จ (" + statusLine + ")");
                 socket.setSoTimeout(0);
@@ -135,57 +136,76 @@ public class HttpCustomProxyData implements ProxyData {
                 return new DelegatingSocket(socket, new SequenceInputStream(new ByteArrayInputStream(pushedBytes), in));
             }
 
-            // 2. If server responded with HTTP status line
-            if (statusLine.toUpperCase().startsWith("HTTP/")) {
-                String[] parts = statusLine.split(" ", 3);
-                int statusCode = 200;
-                if (parts.length >= 2) {
-                    try {
-                        statusCode = Integer.parseInt(parts[1]);
-                    } catch (NumberFormatException ignored) {
-                    }
-                }
-
-                // If 100 Continue, read until real response
-                while (statusCode == 100) {
-                    consumeHeaders(in);
-                    statusLine = readLine(in);
-                    if (statusLine == null) break;
-                    statusLine = statusLine.trim();
-                    ConnectionLogger.getInstance().info("ตอบกลับ: " + statusLine);
-                    if (statusLine.startsWith("SSH-")) {
-                        socket.setSoTimeout(0);
-                        byte[] pushedBytes = (statusLine + "\r\n").getBytes(StandardCharsets.ISO_8859_1);
-                        return new DelegatingSocket(socket, new SequenceInputStream(new ByteArrayInputStream(pushedBytes), in));
-                    }
-                    parts = statusLine.split(" ", 3);
-                    if (parts.length >= 2 && parts[0].toUpperCase().startsWith("HTTP/")) {
-                        try {
-                            statusCode = Integer.parseInt(parts[1]);
-                        } catch (NumberFormatException ignored) {
-                        }
-                    }
-                }
-
-                consumeHeaders(in);
-
-                if ((statusCode >= 200 && statusCode < 400) || statusCode == 101) {
-                    ConnectionLogger.getInstance().success("HTTP Payload เจรจาสำเร็จ (" + statusLine + ")");
-                    socket.setSoTimeout(0);
-                    return socket;
-                } else {
-                    // For 4xx/5xx in bug hosts or custom proxies, still attempt SSH tunnel
-                    ConnectionLogger.getInstance().warn("Proxy ตอบกลับสถานะ: " + statusLine + " (เริ่มส่ง SSH Handshake ต่อเนื่อง)");
-                    socket.setSoTimeout(0);
-                    return socket;
-                }
+            if (!statusLine.toUpperCase(Locale.ROOT).startsWith("HTTP/")) {
+                // Preserve non-HTTP bytes; let SSH validate the actual protocol banner.
+                socket.setSoTimeout(0);
+                byte[] pushedBytes = (statusLine + "\r\n").getBytes(StandardCharsets.ISO_8859_1);
+                return new DelegatingSocket(socket, new SequenceInputStream(new ByteArrayInputStream(pushedBytes), in));
             }
 
-            // 3. Any other response (push back and try SSH)
-            socket.setSoTimeout(0);
-            byte[] pushedBytes = (statusLine + "\r\n").getBytes(StandardCharsets.ISO_8859_1);
-            return new DelegatingSocket(socket, new SequenceInputStream(new ByteArrayInputStream(pushedBytes), in));
+            int statusCode = parseStatusCode(statusLine);
+            Map<String, String> headers = readHeaders(in);
 
+            // Handle interim 100 Continue responses without treating them as a tunnel.
+            while (statusCode == 100) {
+                statusLine = readLine(in);
+                if (statusLine == null) {
+                    throw new IOException("Proxy ส่ง HTTP 100 Continue แต่ไม่มี response สุดท้าย");
+                }
+                statusLine = statusLine.trim();
+                ConnectionLogger.getInstance().info("ตอบกลับ: " + statusLine);
+                if (!statusLine.toUpperCase(Locale.ROOT).startsWith("HTTP/")) {
+                    throw new IOException("รูปแบบ HTTP response หลัง 100 Continue ไม่ถูกต้อง");
+                }
+                statusCode = parseStatusCode(statusLine);
+                headers = readHeaders(in);
+            }
+
+            String firstLine = expandedPayload.trim();
+            int lineEnd = firstLine.indexOf('\n');
+            if (lineEnd >= 0) firstLine = firstLine.substring(0, lineEnd).trim();
+            String method = firstLine.isEmpty() ? "" : firstLine.split("\\s+", 2)[0].toUpperCase(Locale.ROOT);
+            boolean isConnectRequest = "CONNECT".equals(method);
+
+            if (isConnectRequest) {
+                if (statusCode >= 200 && statusCode < 300) {
+                    ConnectionLogger.getInstance().success("HTTP CONNECT tunnel สำเร็จ (" + statusLine + ")");
+                    socket.setSoTimeout(0);
+                    return socket;
+                }
+                if (statusCode >= 300 && statusCode < 400) {
+                    String location = headers.get("location");
+                    throw new IOException("HTTP CONNECT ถูก Redirect (" + statusLine + ")"
+                            + (location != null ? " Location: " + location : "")
+                            + "; Redirect ไม่ใช่ SSH tunnel");
+                }
+                throw new IOException("HTTP CONNECT ไม่สำเร็จ (" + statusLine + ")"
+                        + (statusCode == 407 ? " — Proxy ต้องการการยืนยันตัวตน (407)" : ""));
+            }
+
+            // A non-CONNECT payload is accepted only for an explicit WebSocket upgrade.
+            boolean requestedWebSocket = expandedPayload.toLowerCase(Locale.ROOT).contains("upgrade: websocket")
+                    && expandedPayload.toLowerCase(Locale.ROOT).contains("connection: upgrade");
+            boolean responseWebSocket = "websocket".equalsIgnoreCase(headers.get("upgrade"))
+                    && headers.getOrDefault("connection", "").toLowerCase(Locale.ROOT).contains("upgrade");
+            if (statusCode == 101 && requestedWebSocket && responseWebSocket) {
+                ConnectionLogger.getInstance().success("WebSocket Upgrade สำเร็จ (" + statusLine + ")");
+                socket.setSoTimeout(0);
+                return socket;
+            }
+
+            if (statusCode >= 300 && statusCode < 400) {
+                String location = headers.get("location");
+                throw new IOException("HTTP Payload ถูก Redirect (" + statusLine + ")"
+                        + (location != null ? " Location: " + location : "")
+                        + "; ปลายทางยังไม่ได้สร้าง SSH tunnel");
+            }
+            if (statusCode == 101) {
+                throw new IOException("ได้รับ HTTP 101 แต่ไม่พบ WebSocket Upgrade ที่ตรงกับ Payload; ปฏิเสธการส่งข้อมูลเข้า SSH");
+            }
+            throw new IOException("HTTP response (" + statusLine + ") ไม่ได้ยืนยัน SSH tunnel; "
+                    + "Payload แบบ " + (method.isEmpty() ? "ไม่ทราบ method" : method)
+                    + " ต้องใช้ปลายทางที่รองรับ tunnel จริง");
         } catch (IOException e) {
             try {
                 socket.close();
@@ -195,17 +215,33 @@ public class HttpCustomProxyData implements ProxyData {
         }
     }
 
-    private static String consumeHeaders(InputStream in) throws IOException {
-        StringBuilder sb = new StringBuilder();
+    private static Map<String, String> readHeaders(InputStream in) throws IOException {
+        Map<String, String> headers = new HashMap<>();
         String line;
         while ((line = readLine(in)) != null) {
-            line = line.trim();
-            if (line.isEmpty()) {
-                break;
+            if (line.isEmpty()) break;
+            int colon = line.indexOf(':');
+            if (colon > 0) {
+                String name = line.substring(0, colon).trim().toLowerCase(Locale.ROOT);
+                String value = line.substring(colon + 1).trim();
+                headers.merge(name, value, (oldValue, newValue) -> oldValue + ", " + newValue);
             }
-            sb.append(line).append("\n");
         }
-        return sb.toString();
+        return headers;
+    }
+
+    private static int parseStatusCode(String statusLine) throws IOException {
+        String[] parts = statusLine.trim().split("\\s+", 3);
+        if (parts.length < 2 || !parts[0].toUpperCase(Locale.ROOT).startsWith("HTTP/")) {
+            throw new IOException("HTTP status line ไม่ถูกต้อง: " + statusLine);
+        }
+        try {
+            int code = Integer.parseInt(parts[1]);
+            if (code < 100 || code > 599) throw new NumberFormatException("out of range");
+            return code;
+        } catch (NumberFormatException e) {
+            throw new IOException("ไม่สามารถอ่าน HTTP status code: " + statusLine, e);
+        }
     }
 
     private static String readLine(InputStream in) throws IOException {
