@@ -75,6 +75,7 @@ public class SocksProxyService extends VpnService {
 
     @Override
     public void onDestroy() {
+        StatusInfo.getInstance().setActive(false);
         Log.d(TAG, "Shutting down gracefully");
         AsyncTask.execute(new Runnable() {
             @Override
@@ -153,6 +154,7 @@ public class SocksProxyService extends VpnService {
 
             engine.Engine.insert(key);
             engine.Engine.start();
+            StatusInfo.getInstance().setActive(true);
             ru.anton2319.vpnoverssh.utils.ConnectionLogger.getInstance().success("Tun2Socks ทำงานแล้ว: อุโมงค์ VPN พร้อมรับ-ส่งข้อมูลทั้งหมดผ่าน SSH");
 
             // Do not busy-spin here: the previous tight loop consumed a CPU
@@ -172,6 +174,7 @@ public class SocksProxyService extends VpnService {
             ru.anton2319.vpnoverssh.utils.ConnectionLogger.getInstance().info("บริการ VPN หยุดทำงานตามคำสั่ง");
             onDestroy();
         } catch (Exception e) {
+            StatusInfo.getInstance().setActive(false);
             Log.e(TAG, "VPN thread error: ", e);
             ru.anton2319.vpnoverssh.utils.ConnectionLogger.getInstance().error("VpnService ล้มเหลว: " + e.getMessage());
             ru.anton2319.vpnoverssh.utils.ConnectionLogger.getInstance().warn("แนวทางแก้ไข: ตรวจสอบการอนุญาต VpnService หรือตรวจเช็กพอร์ต Forwarder");
