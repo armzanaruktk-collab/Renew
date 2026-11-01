@@ -183,10 +183,20 @@ public class HttpCustomProxyData implements ProxyData {
                         + (statusCode == 407 ? " — Proxy ต้องการการยืนยันตัวตน (407)" : ""));
             }
 
-            // This SSH library uses a raw TCP stream and does not decode WebSocket frames.
-            // Therefore even a valid 101 upgrade cannot be passed through as an SSH socket.
             if (statusCode == 101) {
-                throw new IOException("ได้รับ HTTP 101 Switching Protocols แต่ SSH transport นี้ยังไม่รองรับ WebSocket framing");
+                String upgrade = headers.get("upgrade");
+                String connection = headers.get("connection");
+                String accept = headers.get("sec-websocket-accept");
+                String requestKey = findHeaderValue(expandedPayload, "Sec-WebSocket-Key");
+                if (upgrade == null || !upgrade.equalsIgnoreCase("websocket")
+                        || connection == null || !connection.toLowerCase(Locale.ROOT).contains("upgrade")
+                        || requestKey == null || accept == null
+                        || !WebSocketTunnelSocket.isValidAccept(requestKey, accept)) {
+                    throw new IOException("WebSocket handshake ไม่ถูกต้อง: ต้องมี Upgrade/Connection และ Sec-WebSocket-Accept ที่ตรวจสอบได้");
+                }
+                ConnectionLogger.getInstance().success("WebSocket handshake สำเร็จ (101 Switching Protocols); เปิด SSH byte-stream ผ่าน WebSocket");
+                socket.setSoTimeout(0);
+                return new WebSocketTunnelSocket(socket, in);
             }
 
             if (statusCode >= 300 && statusCode < 400) {
@@ -208,6 +218,16 @@ public class HttpCustomProxyData implements ProxyData {
             }
             throw e;
         }
+    }
+
+    private static String findHeaderValue(String request, String headerName) {
+        for (String line : request.replace("\r\n", "\n").split("\n")) {
+            int colon = line.indexOf(':');
+            if (colon > 0 && line.substring(0, colon).trim().equalsIgnoreCase(headerName)) {
+                return line.substring(colon + 1).trim();
+            }
+        }
+        return null;
     }
 
     private static Map<String, String> readHeaders(InputStream in) throws IOException {
