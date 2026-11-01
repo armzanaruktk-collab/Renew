@@ -2239,6 +2239,33 @@
                 android:textSize="16sp" />
         </LinearLayout>
 
+        <!-- Drawer Item: Export / Import Config -->
+        <LinearLayout
+            android:id="@+id/drawer_item_config"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="24dp">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:contentDescription="สำรอง Config"
+                android:src="@drawable/ic_copy"
+                app:tint="@color/white" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="18dp"
+                android:text="สำรอง / กู้คืน Config"
+                android:textColor="@color/white"
+                android:textSize="16sp" />
+        </LinearLayout>
+
         <!-- Spacer -->
         <View
             android:layout_width="match_parent"
