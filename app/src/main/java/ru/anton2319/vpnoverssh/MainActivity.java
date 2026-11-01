@@ -397,7 +397,11 @@ public class MainActivity extends AppCompatActivity {
             ivStatusIcon.setColorFilter(Color.GRAY);
             tvStatusTitle.setText(hasServer ? R.string.status_ready : R.string.server_add_title);
             tvStatusTitle.setTextColor(Color.LTGRAY);
-            tvStatusDesc.setText(hasServer ? R.string.status_ready_desc : "เพิ่ม SSH Server ก่อนเริ่มเชื่อมต่อ");
+            if (hasServer) {
+                tvStatusDesc.setText(R.string.status_ready_desc);
+            } else {
+                tvStatusDesc.setText("เพิ่ม SSH Server ก่อนเริ่มเชื่อมต่อ");
+            }
         }
 
         boolean canConnect = hasServer && (isDirectSsh || hasPayload);
