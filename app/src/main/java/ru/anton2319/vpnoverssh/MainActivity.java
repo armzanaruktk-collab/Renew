@@ -2,6 +2,10 @@ package ru.anton2319.vpnoverssh;
 
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.net.VpnService;
@@ -31,6 +35,11 @@ import com.google.android.material.bottomsheet.BottomSheetDialog;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
 
 import ru.anton2319.vpnoverssh.data.PayloadProfile;
 import ru.anton2319.vpnoverssh.data.SSHConnectionProfile;
@@ -44,6 +53,9 @@ import ru.anton2319.vpnoverssh.services.SshService;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
+    private static final int REQUEST_EXPORT_CONFIG = 8101;
+    private static final int REQUEST_IMPORT_CONFIG = 8102;
+    private static final String CONFIG_MIME = "application/json";
 
     private DrawerLayout drawerLayout;
     private View viewScreenHome;
@@ -1279,6 +1291,10 @@ public class MainActivity extends AppCompatActivity {
             drawerLayout.closeDrawer(GravityCompat.END);
             showAboutDialog();
         });
+        findViewById(R.id.drawer_item_config).setOnClickListener(v -> {
+            drawerLayout.closeDrawer(GravityCompat.END);
+            showConfigActions();
+        });
 
         findViewById(R.id.drawer_item_exit).setOnClickListener(v -> {
             drawerLayout.closeDrawer(GravityCompat.END);
@@ -1287,6 +1303,99 @@ public class MainActivity extends AppCompatActivity {
             }
             finishAffinity();
         });
+    }
+
+
+    private void showConfigActions() {
+        new AlertDialog.Builder(this)
+                .setTitle("สำรอง / กู้คืน Config")
+                .setItems(new String[]{"Export Config (.json)", "Import Config (.json)"}, (dialog, which) -> {
+                    Intent intent = new Intent(which == 0 ? Intent.ACTION_CREATE_DOCUMENT : Intent.ACTION_OPEN_DOCUMENT);
+                    intent.addCategory(Intent.CATEGORY_OPENABLE);
+                    intent.setType(CONFIG_MIME);
+                    if (which == 0) intent.putExtra(Intent.EXTRA_TITLE, "godarmxvpn-config.json");
+                    startActivityForResult(intent, which == 0 ? REQUEST_EXPORT_CONFIG : REQUEST_IMPORT_CONFIG);
+                }).show();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode != RESULT_OK || data == null || data.getData() == null) return;
+        Uri uri = data.getData();
+        try {
+            Gson gson = new Gson();
+            if (requestCode == REQUEST_EXPORT_CONFIG) {
+                JsonObject root = new JsonObject();
+                root.addProperty("format", "godarmxvpn-config");
+                root.addProperty("version", 1);
+                root.add("sshProfiles", gson.toJsonTree(sshManager.loadProfiles()));
+                root.add("payloadProfiles", gson.toJsonTree(payloadManager.loadProfiles()));
+                root.add("preferences", gson.toJsonTree(sharedPreferences.getAll()));
+                try (OutputStream out = getContentResolver().openOutputStream(uri, "w")) {
+                    if (out == null) throw new java.io.IOException("เปิดไฟล์เพื่อบันทึกไม่ได้");
+                    out.write((gson.toJson(root) + "\n").getBytes(StandardCharsets.UTF_8));
+                    out.flush();
+                }
+                Toast.makeText(this, "ส่งออก Config สำเร็จ", Toast.LENGTH_LONG).show();
+            } else if (requestCode == REQUEST_IMPORT_CONFIG) {
+                StringBuilder json = new StringBuilder();
+                try (InputStream in = getContentResolver().openInputStream(uri)) {
+                    if (in == null) throw new java.io.IOException("เปิดไฟล์ไม่ได้");
+                    byte[] buffer = new byte[4096];
+                    int count;
+                    while ((count = in.read(buffer)) != -1) {
+                        if (json.length() + count > 2097152) throw new java.io.IOException("ไฟล์ Config ใหญ่เกินไป");
+                        json.append(new String(buffer, 0, count, StandardCharsets.UTF_8));
+                    }
+                }
+                JsonObject root = JsonParser.parseString(json.toString()).getAsJsonObject();
+                if (!root.has("format") || !"godarmxvpn-config".equals(root.get("format").getAsString())
+                        || !root.has("version") || root.get("version").getAsInt() != 1
+                        || !root.has("sshProfiles") || !root.has("payloadProfiles")) {
+                    throw new java.io.IOException("รูปแบบ Config ไม่ถูกต้องหรือไม่รองรับ");
+                }
+                Type sshType = new TypeToken<List<SSHConnectionProfile>>() {}.getType();
+                Type payloadType = new TypeToken<List<PayloadProfile>>() {}.getType();
+                List<SSHConnectionProfile> ssh = gson.fromJson(root.get("sshProfiles"), sshType);
+                List<PayloadProfile> payloads = gson.fromJson(root.get("payloadProfiles"), payloadType);
+                if (ssh == null || payloads == null || ssh.size() > 500 || payloads.size() > 500) {
+                    throw new java.io.IOException("ข้อมูลโปรไฟล์ไม่ถูกต้อง");
+                }
+                for (SSHConnectionProfile p : ssh) {
+                    if (p == null || p.getServerIP() == null || p.getServerPort() < 1 || p.getServerPort() > 65535)
+                        throw new java.io.IOException("พบ SSH profile ที่ไม่ถูกต้อง");
+                    if (p.uuid == null) p.uuid = UUID.randomUUID();
+                }
+                for (PayloadProfile p : payloads) {
+                    if (p == null || p.uuid == null || p.payload == null)
+                        throw new java.io.IOException("พบ Payload profile ที่ไม่ถูกต้อง");
+                }
+                sshManager.saveProfiles(ssh);
+                if (!payloadManager.saveProfiles(payloads)) throw new java.io.IOException("บันทึก Payload ไม่สำเร็จ");
+                if (root.has("preferences") && root.get("preferences").isJsonObject()) {
+                    SharedPreferences.Editor editor = sharedPreferences.edit().clear();
+                    for (java.util.Map.Entry<String, com.google.gson.JsonElement> e : root.getAsJsonObject("preferences").entrySet()) {
+                        com.google.gson.JsonElement value = e.getValue();
+                        if (value == null || value.isJsonNull() || !value.isJsonPrimitive()) continue;
+                        com.google.gson.JsonPrimitive p = value.getAsJsonPrimitive();
+                        if (p.isBoolean()) editor.putBoolean(e.getKey(), p.getAsBoolean());
+                        else if (p.isNumber()) editor.putFloat(e.getKey(), p.getAsFloat());
+                        else editor.putString(e.getKey(), p.getAsString());
+                    }
+                    editor.apply();
+                }
+                sshProfileList = sshManager.loadProfiles();
+                payloadProfileList = payloadManager.loadProfiles();
+                selectedSshProfile = sshProfileList.isEmpty() ? null : sshProfileList.get(0);
+                selectedPayloadProfile = payloadProfileList.isEmpty() ? null : payloadProfileList.get(0);
+                loadData();
+                Toast.makeText(this, "นำเข้า Config สำเร็จ", Toast.LENGTH_LONG).show();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Config import/export failed", e);
+            Toast.makeText(this, "จัดการ Config ไม่สำเร็จ: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
 
     private void setupLogEvents() {
