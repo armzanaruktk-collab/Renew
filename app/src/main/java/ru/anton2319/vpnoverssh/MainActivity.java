@@ -50,12 +50,13 @@ import ru.anton2319.vpnoverssh.data.utils.PayloadProfileManager;
 import ru.anton2319.vpnoverssh.data.utils.SSHConnectionProfileManager;
 import ru.anton2319.vpnoverssh.services.SocksProxyService;
 import ru.anton2319.vpnoverssh.services.SshService;
+import ru.anton2319.vpnoverssh.utils.ConfigCrypto;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private static final int REQUEST_EXPORT_CONFIG = 8101;
     private static final int REQUEST_IMPORT_CONFIG = 8102;
-    private static final String CONFIG_MIME = "application/json";
+    private static final String CONFIG_MIME = "application/octet-stream";
 
     private DrawerLayout drawerLayout;
     private View viewScreenHome;
@@ -1313,7 +1314,7 @@ public class MainActivity extends AppCompatActivity {
                     Intent intent = new Intent(which == 0 ? Intent.ACTION_CREATE_DOCUMENT : Intent.ACTION_OPEN_DOCUMENT);
                     intent.addCategory(Intent.CATEGORY_OPENABLE);
                     intent.setType(CONFIG_MIME);
-                    if (which == 0) intent.putExtra(Intent.EXTRA_TITLE, "godarmxvpn-config.json");
+                    if (which == 0) intent.putExtra(Intent.EXTRA_TITLE, "godarmxvpn-config.keystore.base64");
                     startActivityForResult(intent, which == 0 ? REQUEST_EXPORT_CONFIG : REQUEST_IMPORT_CONFIG);
                 }).show();
     }
@@ -1334,7 +1335,8 @@ public class MainActivity extends AppCompatActivity {
                 root.add("preferences", gson.toJsonTree(sharedPreferences.getAll()));
                 try (OutputStream out = getContentResolver().openOutputStream(uri, "w")) {
                     if (out == null) throw new java.io.IOException("เปิดไฟล์เพื่อบันทึกไม่ได้");
-                    out.write((gson.toJson(root) + "\n").getBytes(StandardCharsets.UTF_8));
+                    String encryptedBackup = ConfigCrypto.encryptToBase64(gson.toJson(root));
+                    out.write((encryptedBackup + "\n").getBytes(StandardCharsets.UTF_8));
                     out.flush();
                 }
                 Toast.makeText(this, "ส่งออก Config สำเร็จ", Toast.LENGTH_LONG).show();
@@ -1349,7 +1351,8 @@ public class MainActivity extends AppCompatActivity {
                         json.append(new String(buffer, 0, count, StandardCharsets.UTF_8));
                     }
                 }
-                JsonObject root = JsonParser.parseString(json.toString()).getAsJsonObject();
+                String decryptedJson = ConfigCrypto.decryptFromBase64(json.toString());
+                JsonObject root = JsonParser.parseString(decryptedJson).getAsJsonObject();
                 if (!root.has("format") || !"godarmxvpn-config".equals(root.get("format").getAsString())
                         || !root.has("version") || root.get("version").getAsInt() != 1
                         || !root.has("sshProfiles") || !root.has("payloadProfiles")) {
