@@ -20,8 +20,10 @@ android {
         applicationId "ru.anton2319.vpnoverssh"
         minSdk 26
         targetSdk 36
-        versionCode 1
-        versionName "1.0"
+        // Keep applicationId unchanged and increase versionCode on every CI build.
+        // GitHub Actions run numbers are monotonically increasing for this workflow.
+        versionCode Math.max(2, (System.getenv("GITHUB_RUN_NUMBER") ?: "2").toInteger())
+        versionName "1.0.${System.getenv("GITHUB_RUN_NUMBER") ?: "2"}"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
