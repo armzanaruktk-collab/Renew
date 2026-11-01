@@ -26,12 +26,12 @@ jobs:
         uses: android-actions/setup-android@v3
         with:
           accept-android-sdk-licenses: true
-          packages: 'platform-tools platforms;android-33 ndk;25.2.9519653'
+          packages: 'platform-tools platforms;android-36 ndk;25.2.9519653'
 
       - name: Verify Android SDK
         run: |
           sdkmanager --list_installed
-          test -d "$ANDROID_HOME/platforms/android-33"
+          test -d "$ANDROID_HOME/platforms/android-36"
           test -d "$ANDROID_HOME/ndk/25.2.9519653"
            
       - name: Setup debug keystore
