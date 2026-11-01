@@ -364,36 +364,49 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateHomeDisplays() {
-        if (selectedSshProfile != null) {
-            tvHomeServerName.setText(selectedSshProfile.getProfileName());
-            tvSshServerName.setText(selectedSshProfile.getProfileName());
-        }
-        if (selectedPayloadProfile != null) {
-            tvHomePayloadName.setText(selectedPayloadProfile.name);
-            tvSshPayloadName.setText(selectedPayloadProfile.name);
-            String proxyText = (selectedPayloadProfile.proxyHost != null && !selectedPayloadProfile.proxyHost.trim().isEmpty())
+        boolean hasServer = selectedSshProfile != null;
+        boolean hasPayload = selectedPayloadProfile != null;
+
+        String noServer = "ยังไม่มี SSH Server — แตะเพื่อเพิ่ม";
+        String noPayload = "ยังไม่มี Payload — แตะเพื่อเพิ่ม";
+
+        tvHomeServerName.setText(hasServer ? selectedSshProfile.getProfileName() : noServer);
+        tvSshServerName.setText(hasServer ? selectedSshProfile.getProfileName() : noServer);
+
+        tvHomePayloadName.setText(hasPayload ? selectedPayloadProfile.name : noPayload);
+        tvSshPayloadName.setText(hasPayload ? selectedPayloadProfile.name : noPayload);
+        if (hasPayload) {
+            String proxyText = (selectedPayloadProfile.proxyHost != null
+                    && !selectedPayloadProfile.proxyHost.trim().isEmpty())
                     ? ("Proxy: " + selectedPayloadProfile.proxyHost + ":" + selectedPayloadProfile.proxyPort)
-                    : "ฉีดตรงไปยังเซิร์ฟเวอร์ SSH (Direct Payload)";
+                    : "Direct Payload (ไม่มี Remote Proxy)";
             tvSshPayloadProxyDesc.setText(proxyText);
+        } else {
+            tvSshPayloadProxyDesc.setText(noPayload);
         }
 
-        if (StatusInfo.getInstance().isActive()) {
+        boolean active = StatusInfo.getInstance().isActive();
+        if (active) {
             ivStatusIcon.setImageResource(R.drawable.check_circle_fill0_wght400_grad0_opsz24);
             ivStatusIcon.setColorFilter(getColor(R.color.neon_green));
             tvStatusTitle.setText(R.string.status_connected);
             tvStatusTitle.setTextColor(getColor(R.color.neon_green));
             tvStatusDesc.setText(R.string.status_connected_desc);
-            btnHomeConnect.setText(R.string.btn_disconnect);
-            btnSshConnect.setText(R.string.btn_disconnect);
         } else {
             ivStatusIcon.setImageResource(R.drawable.check_circle_fill0_wght400_grad0_opsz24);
-            ivStatusIcon.setColorFilter(getColor(R.color.neon_green));
-            tvStatusTitle.setText(R.string.status_ready);
-            tvStatusTitle.setTextColor(getColor(R.color.neon_green));
-            tvStatusDesc.setText(R.string.status_ready_desc);
-            btnHomeConnect.setText(R.string.btn_connect);
-            btnSshConnect.setText(R.string.btn_connect);
+            ivStatusIcon.setColorFilter(Color.GRAY);
+            tvStatusTitle.setText(hasServer ? R.string.status_ready : R.string.server_add_title);
+            tvStatusTitle.setTextColor(Color.LTGRAY);
+            tvStatusDesc.setText(hasServer ? R.string.status_ready_desc : "เพิ่ม SSH Server ก่อนเริ่มเชื่อมต่อ");
         }
+
+        boolean canConnect = hasServer && (isDirectSsh || hasPayload);
+        btnHomeConnect.setEnabled(active || canConnect);
+        btnSshConnect.setEnabled(active || canConnect);
+        btnHomeConnect.setAlpha(btnHomeConnect.isEnabled() ? 1.0f : 0.5f);
+        btnSshConnect.setAlpha(btnSshConnect.isEnabled() ? 1.0f : 0.5f);
+        btnHomeConnect.setText(active ? R.string.btn_disconnect : R.string.btn_connect);
+        btnSshConnect.setText(active ? R.string.btn_disconnect : R.string.btn_connect);
 
         updateTelemetryDisplay();
     }
