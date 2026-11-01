@@ -1621,76 +1621,123 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    private volatile boolean telemetryLookupRunning = false;
+    private long lastLocationLookup = 0;
+    private String actualExitIp = null;
+    private String actualLocation = null;
+    private int actualPingMs = -1;
+
     private void updateTelemetryDisplay() {
         boolean active = StatusInfo.getInstance().isActive();
         long now = System.currentTimeMillis();
+        int uid = android.os.Process.myUid();
+        long currentRx = android.net.TrafficStats.getUidRxBytes(uid);
+        long currentTx = android.net.TrafficStats.getUidTxBytes(uid);
 
         if (active) {
-            String host = selectedSshProfile != null ? selectedSshProfile.getServerIP() : "43.229.148.181";
-            String name = selectedSshProfile != null ? selectedSshProfile.getProfileName() : "Thailand Server";
-            if (tvTelemetryExitIp != null) {
-                tvTelemetryExitIp.setText("Exit IP: " + host);
-            }
             if (tvTelemetryLocationName != null) {
-                if (name != null && (name.contains("TH") || name.contains("Thai") || name.toLowerCase().contains("bd"))) {
-                    tvTelemetryLocationName.setText("Pho Thong, Thailand");
-                } else if (name != null && !name.trim().isEmpty()) {
-                    tvTelemetryLocationName.setText(name);
-                } else {
-                    tvTelemetryLocationName.setText("Pho Thong, Thailand");
-                }
+                tvTelemetryLocationName.setText(actualLocation != null ? actualLocation : "กำลังตรวจสอบตำแหน่ง...");
             }
-
-            long currentRx = android.net.TrafficStats.getTotalRxBytes();
-            long currentTx = android.net.TrafficStats.getTotalTxBytes();
+            if (tvTelemetryExitIp != null) {
+                tvTelemetryExitIp.setText("Exit IP: " + (actualExitIp != null ? actualExitIp : "กำลังตรวจสอบ..."));
+            }
 
             if (lastTimestamp > 0 && currentRx >= lastRxBytes && currentTx >= lastTxBytes) {
                 long elapsed = now - lastTimestamp;
                 if (elapsed > 0) {
                     long rxDiff = currentRx - lastRxBytes;
                     long txDiff = currentTx - lastTxBytes;
-
-                    double downSpeedKBs = (rxDiff * 1000.0 / elapsed) / 1024.0;
-                    double upSpeedKBs = (txDiff * 1000.0 / elapsed) / 1024.0;
-
-                    if (downSpeedKBs < 1.0 && upSpeedKBs < 1.0) {
-                        downSpeedKBs = 250.4 + (Math.sin(now / 1500.0) * 12.0);
-                        upSpeedKBs = 165.0 + (Math.cos(now / 1500.0) * 8.0);
-                    }
-
-                    sessionRxBytes += (long) (downSpeedKBs * 1024 * (elapsed / 1000.0));
-                    sessionTxBytes += (long) (upSpeedKBs * 1024 * (elapsed / 1000.0));
-
-                    if (tvTelemetrySpeedDown != null) tvTelemetrySpeedDown.setText(formatSpeed(downSpeedKBs));
-                    if (tvTelemetrySpeedUp != null) tvTelemetrySpeedUp.setText(formatSpeed(upSpeedKBs));
+                    sessionRxBytes += rxDiff;
+                    sessionTxBytes += txDiff;
+                    double downKBs = (rxDiff * 1000.0 / elapsed) / 1024.0;
+                    double upKBs = (txDiff * 1000.0 / elapsed) / 1024.0;
+                    if (tvTelemetrySpeedDown != null) tvTelemetrySpeedDown.setText(formatSpeed(downKBs));
+                    if (tvTelemetrySpeedUp != null) tvTelemetrySpeedUp.setText(formatSpeed(upKBs));
                 }
             } else {
-                if (tvTelemetrySpeedDown != null) tvTelemetrySpeedDown.setText("250.4 KB/s");
-                if (tvTelemetrySpeedUp != null) tvTelemetrySpeedUp.setText("165.0 KB/s");
+                if (tvTelemetrySpeedDown != null) tvTelemetrySpeedDown.setText("—");
+                if (tvTelemetrySpeedUp != null) tvTelemetrySpeedUp.setText("—");
             }
-
             lastRxBytes = currentRx;
             lastTxBytes = currentTx;
             lastTimestamp = now;
 
-            int ping = 38 + (int) (Math.abs(Math.sin(now / 2500.0)) * 5);
-            if (tvTelemetryPing != null) tvTelemetryPing.setText(ping + " ms");
-
-            long displayTx = sessionTxBytes > 0 ? sessionTxBytes : 3355443;
-            long displayRx = sessionRxBytes > 0 ? sessionRxBytes : 16043212;
-            if (tvTelemetryTrafficTx != null) tvTelemetryTrafficTx.setText("↑ " + formatDataSize(displayTx));
-            if (tvTelemetryTrafficRx != null) tvTelemetryTrafficRx.setText("↓ " + formatDataSize(displayRx));
+            if (tvTelemetryTrafficTx != null) tvTelemetryTrafficTx.setText("↑ " + formatDataSize(sessionTxBytes));
+            if (tvTelemetryTrafficRx != null) tvTelemetryTrafficRx.setText("↓ " + formatDataSize(sessionRxBytes));
+            if (tvTelemetryPing != null) tvTelemetryPing.setText(actualPingMs >= 0 ? actualPingMs + " ms" : "กำลังวัด...");
+            if (now - lastLocationLookup > 60000 && !telemetryLookupRunning) {
+                lookupNetworkTelemetry();
+            }
         } else {
-            String host = selectedSshProfile != null ? selectedSshProfile.getServerIP() : "43.229.148.181";
-            if (tvTelemetryExitIp != null) tvTelemetryExitIp.setText("Exit IP: " + host);
-            if (tvTelemetryLocationName != null) tvTelemetryLocationName.setText("Pho Thong, Thailand");
-            if (tvTelemetryPing != null) tvTelemetryPing.setText("40 ms");
-            if (tvTelemetryTrafficTx != null) tvTelemetryTrafficTx.setText("↑ 3.2 MB");
-            if (tvTelemetryTrafficRx != null) tvTelemetryTrafficRx.setText("↓ 15.3 MB");
-            if (tvTelemetrySpeedDown != null) tvTelemetrySpeedDown.setText("250.4 KB/s");
-            if (tvTelemetrySpeedUp != null) tvTelemetrySpeedUp.setText("165.0 KB/s");
             lastTimestamp = 0;
+            lastRxBytes = currentRx;
+            lastTxBytes = currentTx;
+            sessionRxBytes = 0;
+            sessionTxBytes = 0;
+            actualPingMs = -1;
+            actualExitIp = null;
+            actualLocation = null;
+            if (tvTelemetryLocationName != null) tvTelemetryLocationName.setText("ยังไม่ได้เชื่อมต่อ");
+            if (tvTelemetryExitIp != null) tvTelemetryExitIp.setText("Exit IP: —");
+            if (tvTelemetryPing != null) tvTelemetryPing.setText("— ms");
+            if (tvTelemetryTrafficTx != null) tvTelemetryTrafficTx.setText("↑ 0 B");
+            if (tvTelemetryTrafficRx != null) tvTelemetryTrafficRx.setText("↓ 0 B");
+            if (tvTelemetrySpeedDown != null) tvTelemetrySpeedDown.setText("—");
+            if (tvTelemetrySpeedUp != null) tvTelemetrySpeedUp.setText("—");
         }
+    }
+
+    private void lookupNetworkTelemetry() {
+        telemetryLookupRunning = true;
+        lastLocationLookup = System.currentTimeMillis();
+        new Thread(() -> {
+            String ip = null;
+            String location = null;
+            int ping = -1;
+            try {
+                long started = System.nanoTime();
+                String host = selectedSshProfile != null ? selectedSshProfile.getServerIP() : null;
+                int port = selectedSshProfile != null ? selectedSshProfile.getServerPort() : 22;
+                if (host != null && !host.trim().isEmpty()) {
+                    try (java.net.Socket socket = new java.net.Socket()) {
+                        socket.connect(new java.net.InetSocketAddress(host, port), 4000);
+                        ping = (int) ((System.nanoTime() - started) / 1000000L);
+                    } catch (Exception ignored) { }
+                }
+
+                java.net.HttpURLConnection conn = (java.net.HttpURLConnection)
+                        new java.net.URL("https://ipapi.co/json/").openConnection();
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(5000);
+                conn.setRequestProperty("Accept", "application/json");
+                try (java.io.InputStream in = conn.getInputStream();
+                     java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream()) {
+                    byte[] buffer = new byte[1024];
+                    int count;
+                    while ((count = in.read(buffer)) != -1) out.write(buffer, 0, count);
+                    org.json.JSONObject json = new org.json.JSONObject(out.toString("UTF-8"));
+                    ip = json.optString("ip", null);
+                    String city = json.optString("city", "");
+                    String country = json.optString("country_name", "");
+                    location = (city + (city.isEmpty() || country.isEmpty() ? "" : ", ") + country).trim();
+                    if (location.isEmpty()) location = null;
+                } finally {
+                    conn.disconnect();
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Network telemetry lookup failed", e);
+            }
+            final String resultIp = ip;
+            final String resultLocation = location;
+            final int resultPing = ping;
+            runOnUiThread(() -> {
+                actualExitIp = resultIp;
+                actualLocation = resultLocation;
+                actualPingMs = resultPing;
+                telemetryLookupRunning = false;
+                updateTelemetryDisplay();
+            });
+        }, "network-telemetry").start();
     }
 
     private String formatSpeed(double kbs) {
