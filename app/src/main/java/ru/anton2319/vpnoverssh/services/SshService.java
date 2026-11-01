@@ -95,20 +95,11 @@ public class SshService extends Service {
             Log.i(TAG, "Connecting directly to SSH server " + host + ":" + port);
         }
 
-        // Pre-flight DNS resolution check for clear diagnostic logging
-        ConnectionLogger.getInstance().info("กำลังตรวจสอบ DNS และค้นหา IP ของ " + host + "...");
-        try {
-            java.net.InetAddress[] ips = java.net.InetAddress.getAllByName(host);
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < ips.length; i++) {
-                if (i > 0) sb.append(", ");
-                sb.append(ips[i].getHostAddress());
-            }
-            ConnectionLogger.getInstance().info("DNS สำเร็จ: IP เซิร์ฟเวอร์คือ [" + sb + "]");
-        } catch (java.net.UnknownHostException uhe) {
-            ConnectionLogger.getInstance().error("DNS Lookup ล้มเหลว: ไม่พบโฮสต์ \"" + host + "\" ในระบบเครือข่ายอินเทอร์เน็ต");
-            ConnectionLogger.getInstance().warn("ข้อเสนอแนะ: โฮสต์ '" + host + "' ไม่มีอยู่จริงหรือโดเมนหมดอายุ กรุณาเปลี่ยนเป็น IP หรือโดเมนเซิร์ฟเวอร์จริงของคุณ");
-            throw new IOException("Cannot resolve SSH host '" + host + "': UnknownHostException", uhe);
+        // Do not pre-resolve the SSH target here. In Remote Proxy mode the proxy
+        // may resolve the target hostname on its own; only the proxy endpoint
+        // must be resolved locally. Direct SSH resolution is handled by the SSH socket.
+        if ("PAYLOAD".equals(mode)) {
+            ConnectionLogger.getInstance().info("ข้ามการตรวจ DNS ของ SSH Host ล่วงหน้า; จะตรวจ DNS ของปลายทางที่ต้องเชื่อมต่อจริง");
         }
 
         ConnectionLogger.getInstance().info("กำลังเริ่ม TCP Connection และเจรจา Handshake (timeout: 15s)...");
@@ -223,9 +214,10 @@ public class SshService extends Service {
                 StatusInfo.getInstance().setActive(false);
 
                 if (root instanceof java.net.UnknownHostException || rootMsg.contains("UnknownHost")
-                        || rootMsg.contains("Name or service not known") || rootMsg.contains("Cannot resolve")) {
-                    ConnectionLogger.getInstance().error("SSH ขัดข้อง (DNS): ไม่พบชื่อโฮสต์ \"" + targetHost + "\"");
-                    ConnectionLogger.getInstance().warn("แนวทางแก้ไข: โฮสต์นี้ไม่มีอยู่จริง กรุณาแก้ไขเซิร์ฟเวอร์โดยเปลี่ยนเป็น IP หรือโดเมน SSH จริงของคุณ");
+                        || rootMsg.contains("Name or service not known") || rootMsg.contains("Cannot resolve")
+                        || rootMsg.contains("Unresolved host")) {
+                    ConnectionLogger.getInstance().error("SSH ขัดข้อง (DNS): " + rootMsg);
+                    ConnectionLogger.getInstance().warn("แนวทางแก้ไข: ตรวจสอบชื่อ DNS ที่ระบุในข้อความผิดพลาด (SSH Host หรือ Remote Proxy) และลองเปลี่ยนเครือข่าย/DNS");
                 } else if (root instanceof java.net.SocketTimeoutException || rootMsg.contains("timed out")
                         || rootMsg.contains("timeout")) {
                     ConnectionLogger.getInstance().error("SSH ขัดข้อง (Timeout): ไม่สามารถเชื่อมต่อกับ " + targetHost + ":" + targetPort + " ได้ภายใน 15 วินาที");
