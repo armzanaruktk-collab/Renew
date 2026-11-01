@@ -74,7 +74,7 @@ jobs:
 
             ### 📥 ดาวน์โหลดไฟล์ติดตั้ง:
             ดาวน์โหลดไฟล์ `.apk` ด้านล่างนี้เพื่อนำไปติดตั้งบนอุปกรณ์ Android ได้ทันที
-          files: release-artifacts/*.apk
+          files: app/build/outputs/apk/debug/*.apk
           draft: false
           prerelease: false
           make_latest: true
