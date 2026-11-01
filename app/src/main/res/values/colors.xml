@@ -12,12 +12,12 @@
     <color name="transparent_.10">#1A808080</color>
 
     <!-- godarmxvpn Dark Purple / Blue Neon Theme -->
-    <color name="neon_green">#8B5CF6</color>
-    <color name="neon_green_bright">#A78BFA</color>
-    <color name="neon_green_dark">#6D28D9</color>
-    <color name="neon_green_glow">#408B5CF6</color>
-    <color name="neon_green_ring">#808B5CF6</color>
-    <color name="neon_green_faint">#1A8B5CF6</color>
+    <color name="neon_green">#3B82F6</color>
+    <color name="neon_green_bright">#60A5FA</color>
+    <color name="neon_green_dark">#1D4ED8</color>
+    <color name="neon_green_glow">#403B82F6</color>
+    <color name="neon_green_ring">#803B82F6</color>
+    <color name="neon_green_faint">#1A3B82F6</color>
 
     <color name="dark_bg">#070B18</color>
     <color name="dark_surface">#0D1428</color>
