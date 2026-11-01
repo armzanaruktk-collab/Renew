@@ -97,6 +97,8 @@ public final class WebSocketTunnelSocket extends Socket {
         private byte[] current = new byte[0];
         private int position;
         private boolean ended;
+        private ByteArrayOutputStream fragmented;
+        private int fragmentedOpcode;
 
         private int readNetworkByte() throws IOException {
             int value = networkIn.read();
@@ -144,10 +146,27 @@ public final class WebSocketTunnelSocket extends Socket {
                 if (opcode == 9) { sendFrame(10, payload, 0, payload.length); continue; }
                 if (opcode == 10) continue;
                 if (opcode == 1) throw new IOException("WebSocket text frames are not valid SSH transport data");
-                if (opcode != 0 && opcode != 2) throw new IOException("Unsupported WebSocket opcode: " + opcode);
-                if (!fin && opcode == 2) throw new IOException("Fragmented WebSocket messages are not supported by this transport");
-                if (opcode == 0) throw new IOException("Unexpected WebSocket continuation frame");
-                current = payload;
+                if (opcode == 2) {
+                    if (fragmented != null) throw new IOException("Nested fragmented WebSocket message");
+                    if (fin) {
+                        current = payload;
+                    } else {
+                        fragmentedOpcode = opcode;
+                        fragmented = new ByteArrayOutputStream();
+                        fragmented.write(payload);
+                        continue;
+                    }
+                } else if (opcode == 0) {
+                    if (fragmented == null) throw new IOException("Unexpected WebSocket continuation frame");
+                    if (fragmented.size() + payload.length > MAX_FRAME_SIZE) throw new IOException("Fragmented WebSocket message exceeds safety limit");
+                    fragmented.write(payload);
+                    if (!fin) continue;
+                    current = fragmented.toByteArray();
+                    fragmented = null;
+                    fragmentedOpcode = 0;
+                } else {
+                    throw new IOException("Unsupported WebSocket opcode: " + opcode);
+                }
                 position = 0;
                 if (current.length > 0) return true;
             }
