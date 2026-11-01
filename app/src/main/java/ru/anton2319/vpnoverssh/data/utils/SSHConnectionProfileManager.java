@@ -128,21 +128,10 @@ public class SSHConnectionProfileManager {
     }
 
     public synchronized List<SSHConnectionProfile> seedDefaults() {
-        List<SSHConnectionProfile> defaults = new ArrayList<>();
-        SSHConnectionProfile p1 = new SSHConnectionProfile("bd.sshserver.net", 22, "vpnuser", SSHConnectionProfile.AuthenticationType.PASSWORD);
-        p1.setProfileName("bd_ready_01 (ตัวอย่าง)");
-        p1.setPassword("vpnpassword");
-        p1.setConnectionMode("PAYLOAD");
-        p1.setPayloadUuid("default-mypayload-uuid");
-        defaults.add(p1);
-
-        SSHConnectionProfile p2 = new SSHConnectionProfile("sg.sshserver.net", 443, "vpnuser", SSHConnectionProfile.AuthenticationType.PASSWORD);
-        p2.setProfileName("SG_Gaming_01 (ตัวอย่าง)");
-        p2.setPassword("vpnpassword");
-        p2.setConnectionMode("DIRECT");
-        defaults.add(p2);
-
-        saveProfiles(defaults);
-        return defaults;
+        // Do not create fake demo servers or placeholder credentials.
+        // A new installation must show an empty server list until the user adds one.
+        List<SSHConnectionProfile> profiles = new ArrayList<>();
+        saveProfiles(profiles);
+        return profiles;
     }
 }
